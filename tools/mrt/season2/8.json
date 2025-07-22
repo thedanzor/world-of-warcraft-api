@@ -1,0 +1,51 @@
+[
+    { "isBreak": true },
+    { "ability": "Payline", "time": "00:03", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Foul Exhaust", "time": "00:09", "description": "AoE damage" },
+    { "ability": "The Big Hit", "time": "00:15", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Spin to Win", "time": "00:20", "description": "Slot machine activation" },
+    
+    { "isBreak": true },
+    { "ability": "Flame and Coin", "time": "00:30", "description": "Token combination" },
+    { "isBreak": true },
+    
+    { "ability": "Foul Exhaust", "time": "00:42", "description": "AoE damage" },
+    { "ability": "Payline", "time": "00:48", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "The Big Hit", "time": "00:54", "needsCD": true, "description": "Tank mechanic" },
+    
+    { "isBreak": true },
+    { "ability": "Spin to Win", "time": "01:20", "description": "Slot machine activation" },
+    { "isBreak": true },
+    
+    { "ability": "Shock and Bomb", "time": "01:30", "description": "Token combination" },
+    { "isBreak": true },
+    
+    { "ability": "Payline", "time": "01:35", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Foul Exhaust", "time": "01:40", "description": "AoE damage" },
+    { "ability": "The Big Hit", "time": "01:45", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Explosive Gaze", "time": "01:50", "description": "Run away from others" },
+    
+    { "isBreak": true },
+    { "ability": "Spin to Win", "time": "02:20", "description": "Slot machine activation" },
+    { "isBreak": true },
+    
+    { "ability": "Flame and Bomb", "time": "02:30", "description": "Token combination" },
+    { "isBreak": true },
+    
+    { "ability": "Payline", "time": "02:35", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Foul Exhaust", "time": "02:40", "description": "AoE damage" },
+    { "ability": "The Big Hit", "time": "02:45", "needsCD": true, "description": "Tank mechanic" },
+    
+    { "isBreak": true },
+    { "ability": "Phase 2", "time": "03:00", "description": "This Game Is Rigged!" },
+    { "isBreak": true },
+    
+    { "ability": "Linked Machines", "time": "03:10", "description": "Knockback mechanic" },
+    { "ability": "Hot Hot Hot", "time": "03:35", "needsCD": true, "description": "Dodge fire waves" },
+    { "ability": "Scattered Payout", "time": "04:00", "needsCD": true, "description": "Kill adds" },
+    { "ability": "Linked Machines", "time": "04:25", "description": "Knockback mechanic" },
+    { "ability": "Hot Hot Hot", "time": "04:50", "needsCD": true, "description": "Dodge fire waves" },
+    { "ability": "Scattered Payout", "time": "05:15", "needsCD": true, "description": "Kill adds" },
+    
+    { "ability": "Explosive Jackpot", "time": "06:00", "needsCD": true, "isEnrage": true, "description": "Enrage timer" }
+] 

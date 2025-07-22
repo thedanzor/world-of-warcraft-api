@@ -1,0 +1,60 @@
+[
+    { "isBreak": true },
+    { "ability": "Amplification", "time": "00:10", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "00:17", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "00:22", "needsCD": true },
+    { "ability": "Sound Cannon", "time": "00:30", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "00:38", "needsCD": true },
+    { "ability": "Amplification", "time": "00:50", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "01:19", "needsCD": true },
+    { "ability": "Sound Cannon", "time": "01:27", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "01:30", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "01:35", "needsCD": true },
+    { "ability": "Amplification", "time": "01:50", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "01:52", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "01:59", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "02:11", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Hype Hustle (Phase 2)", "time": "02:20", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Blaring Drop", "time": "02:25", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "02:33", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "02:41", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Phase 1 Restart", "time": "02:50", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Amplification", "time": "03:00", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "03:07", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "03:12", "needsCD": true },
+    { "ability": "Sound Cannon", "time": "03:20", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "03:28", "needsCD": true },
+    { "ability": "Amplification", "time": "03:40", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "04:09", "needsCD": true },
+    { "ability": "Sound Cannon", "time": "04:17", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "04:20", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "04:25", "needsCD": true },
+    { "ability": "Amplification", "time": "04:40", "needsCD": true },
+    { "ability": "Echoing Chant", "time": "04:42", "needsCD": true },
+    { "ability": "Faulty Zap", "time": "04:49", "needsCD": true },
+    { "ability": "Spark Blast Ignition", "time": "05:01", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Hype Hustle (Phase 2)", "time": "05:10", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Blaring Drop", "time": "05:15", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "05:23", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "05:31", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Hype Fever (Final Phase)", "time": "06:00", "needsCD": true, "isEnrage": true },
+    { "isBreak": true },
+
+    { "ability": "Blaring Drop", "time": "06:05", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "06:13", "needsCD": true },
+    { "ability": "Blaring Drop", "time": "06:21", "needsCD": true }
+] 

@@ -1,0 +1,43 @@
+[
+    { "ability": "Venomous Lash", "time": "00:07", "needsCD": true },
+    { "ability": "Digestive Acid", "time": "00:20" },
+    { "ability": "Venomous Lash", "time": "00:32", "needsCD": true },
+    { "ability": "Brutal Lashings", "time": "00:41" },
+    { "ability": "Venomous Lash", "time": "01:00", "needsCD": true },
+    { "ability": "Digestive Acid", "time": "01:04" },
+    { "ability": "Brutal Lashings", "time": "01:18" },
+    { "ability": "Hulking Crash", "time": "01:35" },
+    { "ability": "Juggernaut Charge", "time": "01:43" },
+
+    { "isBreak": true },
+    { "ability": "Charge intermission", "needsCD": true, "time": "01:50" },
+    { "isBreak": true },
+
+    { "ability": "Venomous Lash", "needsCD": true, "time": "03:09" },
+    { "ability": "Digestive Acid", "time": "03:22" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "03:34" },
+    { "ability": "Brutal Lashings", "time": "03:42" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "04:02" },
+    { "ability": "Digestive Acid", "time": "04:06" },
+    { "ability": "Brutal Lashings", "time": "04:19" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "04:42" },
+
+    { "isBreak": true },
+    { "ability": "Charge intermission", "needsCD": true, "time": "04:50" },
+    { "isBreak": true },
+
+    { "ability": "Venomous Lash", "needsCD": true, "time": "06:11" },
+    { "ability": "Digestive Acid", "time": "06:24" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "06:36" },
+    { "ability": "Brutal Lashings", "time": "06:45" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "07:04" },
+    { "ability": "Digestive Acid", "time": "07:08" },
+    { "ability": "Brutal Lashings", "time": "07:22" },
+    { "ability": "Venomous Lash", "needsCD": true, "time": "07:39" },
+
+    { "isBreak": true },
+    { "ability": "Charge intermission", "needsCD": true, "time": "07:50" },
+    { "isBreak": true },
+
+    { "ability": "Ready to Feed", "time": "09:01" }
+]

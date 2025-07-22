@@ -1,0 +1,61 @@
+[
+    { "ability": "Erosive Spray", "needsCD": true, "time": "00:10", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "00:14", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "00:23", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Rolling Acid", "time": "00:35", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "00:50", "primary": null, "secondary": null, "raid": null },
+    
+    { "isBreak": true },
+
+    { "ability": "Acidic Eruption", "time": "01:02", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Web Reave", "time": "01:12", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "01:22", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "01:28", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "01:38", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Rolling Acid", "time": "01:45", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "01:53", "primary": null, "secondary": null, "raid": null },
+
+    { "isBreak": true },
+
+    { "ability": "Acidic Eruption", "time": "02:08", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Web Reave", "time": "02:17", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Rolling Acid", "time": "02:25", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "02:28", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "02:33", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "02:45", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "02:58", "primary": null, "secondary": null, "raid": null },
+
+    { "isBreak": true },
+
+    { "ability": "Acidic Eruption", "time": "03:13", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Web Reave", "time": "03:22", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "03:33", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "03:34", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "03:38", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "03:49", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "04:03", "primary": null, "secondary": null, "raid": null },
+
+    { "isBreak": true },
+
+    { "ability": "Acidic Eruption", "time": "04:18", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Web Reave", "time": "04:27", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "04:38", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Rolling Acid", "time": "04:40", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "04:43", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "05:03", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "05:08", "primary": null, "secondary": null, "raid": null },
+
+    { "isBreak": true },
+
+    { "ability": "Acidic Eruption", "time": "05:23", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Web Reave", "time": "05:32", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "05:38", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Infested Spawn", "time": "05:47", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "05:48", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Spinneret's Strands", "needsCD": true, "time": "05:58", "primary": null, "secondary": null, "raid": null },
+    { "ability": "Erosive Spray", "needsCD": true, "time": "06:13", "primary": null, "secondary": null, "raid": null },
+
+    { "isBreak": true },
+
+    { "ability": "Enrage", "time": "06:23", "isEnrage": true }
+]

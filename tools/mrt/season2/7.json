@@ -1,0 +1,39 @@
+[
+    { "isBreak": true },
+    { "ability": "Mechanical Mayhem", "time": "00:01", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Gear Grind", "time": "00:10", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "00:15", "needsCD": true, "description": "Targeted player mechanic" },
+    { "ability": "Cog Wheel", "time": "00:25", "description": "Dodge mechanic" },
+    { "ability": "Overcharge", "time": "00:30", "needsCD": true, "description": "AoE damage" },
+    { "ability": "Gear Grind", "time": "00:40", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "00:45", "needsCD": true, "description": "Targeted player mechanic" },
+    { "ability": "Cog Wheel", "time": "00:55", "description": "Dodge mechanic" },
+    
+    { "isBreak": true },
+    { "ability": "Mechanical Overload", "time": "01:00", "isBreak": true, "description": "Phase transition" },
+    { "isBreak": true },
+    
+    { "ability": "Gear Grind", "time": "01:10", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "01:15", "needsCD": true, "description": "Targeted player mechanic" },
+    { "ability": "Cog Wheel", "time": "01:25", "description": "Dodge mechanic" },
+    { "ability": "Overcharge", "time": "01:30", "needsCD": true, "description": "AoE damage" },
+    { "ability": "Gear Grind", "time": "01:40", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "01:45", "needsCD": true, "description": "Targeted player mechanic" },
+    { "ability": "Cog Wheel", "time": "01:55", "description": "Dodge mechanic" },
+    
+    { "isBreak": true },
+    { "ability": "Full Throttle", "time": "02:00", "isBreak": true, "description": "Final phase" },
+    { "isBreak": true },
+    
+    { "ability": "Mechanical Mayhem", "time": "02:10", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Gear Grind", "time": "02:20", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "02:25", "needsCD": true, "description": "Targeted player mechanic" },
+    { "ability": "Mechanical Mayhem", "time": "02:30", "needsCD": true, "description": "Major boss ability" },
+    { "ability": "Cog Wheel", "time": "02:35", "description": "Dodge mechanic" },
+    { "ability": "Overcharge", "time": "02:40", "needsCD": true, "description": "AoE damage" },
+    { "ability": "Cog Wheel", "time": "02:45", "description": "Dodge mechanic" },
+    { "ability": "Gear Grind", "time": "02:50", "needsCD": true, "description": "Tank mechanic" },
+    { "ability": "Sprocket Barrage", "time": "02:55", "needsCD": true, "description": "Targeted player mechanic" },
+    
+    { "ability": "Mechanical Meltdown", "time": "03:00", "needsCD": true, "isEnrage": true, "description": "Enrage timer" }
+] 

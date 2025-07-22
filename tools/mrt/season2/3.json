@@ -1,0 +1,58 @@
+[
+    { "isBreak": true },
+    { "ability": "Incinerator", "time": "00:11", "needsCD": true },
+    { "ability": "Demolish", "time": "00:17", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "00:22", "needsCD": true },
+    { "ability": "Meltdown", "time": "00:44", "needsCD": true },
+    { "ability": "Incinerator", "time": "00:36", "needsCD": true },
+    { "ability": "Demolish", "time": "01:08", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "01:13", "needsCD": true },
+    { "ability": "Incinerator", "time": "01:01", "needsCD": true },
+    { "ability": "Meltdown", "time": "01:35", "needsCD": true },
+    { "ability": "Incinerator", "time": "01:26", "needsCD": true },
+    { "ability": "Overdrive", "time": "01:51", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Overdrive Phase", "time": "02:00", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Trash Compactor", "time": "02:05", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Phase 1 Restart", "time": "02:10", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Incinerator", "time": "02:23", "needsCD": true },
+    { "ability": "Demolish", "time": "02:29", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "02:34", "needsCD": true },
+    { "ability": "Meltdown", "time": "02:56", "needsCD": true },
+    { "ability": "Incinerator", "time": "02:48", "needsCD": true },
+    { "ability": "Demolish", "time": "03:20", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "03:25", "needsCD": true },
+    { "ability": "Incinerator", "time": "03:13", "needsCD": true },
+    { "ability": "Meltdown", "time": "03:47", "needsCD": true },
+    { "ability": "Incinerator", "time": "03:38", "needsCD": true },
+    { "ability": "Overdrive", "time": "04:03", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Overdrive Phase", "time": "04:12", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Trash Compactor", "time": "04:17", "needsCD": true },
+
+    { "isBreak": true },
+    { "ability": "Phase 1 Restart", "time": "04:22", "needsCD": true },
+    { "isBreak": true },
+
+    { "ability": "Incinerator", "time": "04:35", "needsCD": true },
+    { "ability": "Demolish", "time": "04:41", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "04:46", "needsCD": true },
+    { "ability": "Meltdown", "time": "05:08", "needsCD": true },
+    { "ability": "Incinerator", "time": "05:00", "needsCD": true },
+    { "ability": "Demolish", "time": "05:32", "needsCD": true },
+    { "ability": "Electro Sorting", "time": "05:37", "needsCD": true },
+    { "ability": "Incinerator", "time": "05:25", "needsCD": true },
+    { "ability": "Meltdown", "time": "05:59", "needsCD": true },
+    { "ability": "Incinerator", "time": "05:50", "needsCD": true },
+    { "ability": "Overdrive", "time": "06:15", "needsCD": true, "isEnrage": true }
+] 
