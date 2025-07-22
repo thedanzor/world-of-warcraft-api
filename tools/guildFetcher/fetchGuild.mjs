@@ -12,7 +12,6 @@ import gradient from 'gradient-string';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { 
-  saveGuildData, 
   findMemberByName, 
   updateMember, 
   addMember, 
@@ -437,47 +436,15 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
             });
         }
 
-        // Generate final statistics
-        emitProgress(io, processId, 'statistics', {
-            message: 'Generating final statistics...'
-        });
-
-        const finalPayload = {
-            data: updatedMemberNames, // Just the names for legacy compatibility
+        emitProgress(io, processId, 'complete', {
+            message: 'Guild data update completed successfully!',
+            success: true,
             statistics: {
                 totalMembers: updatedMemberNames.length,
                 updatedMembers: updatedMemberNames.length,
                 dataTypes
-            },
-            timestamp: Date.now(),
-            dataTypes
-        };
-
-        // Save legacy format for backward compatibility
-        emitProgress(io, processId, 'saving', {
-            message: 'Saving legacy data format...'
+            }
         });
-        
-        try {
-            await saveGuildData(finalPayload);
-            
-            emitProgress(io, processId, 'complete', {
-                message: 'Guild data update completed successfully!',
-                success: true,
-                statistics: {
-                    totalMembers: updatedMemberNames.length,
-                    updatedMembers: updatedMemberNames.length,
-                    dataTypes
-                }
-            });
-            
-        } catch (err) {
-            emitProgress(io, processId, 'error', {
-                message: 'Error saving legacy data format!',
-                error: err.message
-            });
-            throw err;
-        }
         
     } catch (error) {
         emitProgress(io, processId, 'error', {
