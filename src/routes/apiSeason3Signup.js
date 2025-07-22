@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-// Import saveSeason3Signup from database.js
+import { saveSeason3Signup } from '../database.js';
 
 /**
  * POST /api/season3/signup - Handles Season 3 signup submissions.
@@ -15,12 +15,19 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
   try {
-    // const formData = req.body;
-    // ... logic from index.js ...
+    const formData = req.body;
+    
+    // Save the signup data to MongoDB
+    const result = await saveSeason3Signup(formData);
+    
     res.json({
       success: true,
-      // message: 'Signup submitted successfully',
-      // season3: { ... }
+      message: 'Signup submitted successfully',
+      season3: {
+        id: result.insertedId,
+        timestamp: new Date().toISOString(),
+        ...formData
+      }
     });
   } catch (error) {
     res.status(500).json({

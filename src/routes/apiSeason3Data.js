@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-// Import getSeason3Signups from database.js
+import { getSeason3Signups } from '../database.js';
 
 /**
  * GET /api/season3/data - Returns all Season 3 signups.
@@ -15,13 +15,13 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    // const season3Signups = await getSeason3Signups();
-    // ... logic from index.js ...
+    const season3Signups = await getSeason3Signups();
+    
     res.json({
       success: true,
-      // season3: season3Signups,
-      // totalMembers: season3Signups.length,
-      // timestamp: season3Signups[0]?.timestamp || new Date().toISOString()
+      season3: season3Signups,
+      totalMembers: season3Signups.length,
+      timestamp: season3Signups[0]?.timestamp || new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({
