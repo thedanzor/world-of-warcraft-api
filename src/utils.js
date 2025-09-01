@@ -63,7 +63,9 @@ function transformCharacterData(character) {
       total: oldSet + newSet
     },
     mplus: character.mplus?.current_mythic_rating?.rating || 0,
+    raw_mplus: character.mplus,
     pvp: character.pvp?.rating || 0,
+    raw_pvp: character.pvp,
     hasTierSet: (oldSet + newSet) >= 4,
     isActiveInSeason2: character.isActiveInSeason2,
     lockStatus: character.lockStatus,
