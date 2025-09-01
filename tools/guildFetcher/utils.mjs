@@ -3,9 +3,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const configPath = join(__dirname, '../../app.config.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const __dirname = dirname(import.meta.url);
+
+// Import the config as a module instead of parsing as JSON
+const config = await import('../../app.config.js');
 
 const {
     API_PARAM_REQUIREMENTGS,
@@ -14,7 +15,7 @@ const {
     HEALERS,
     MAIN_RANKS,
     ALT_RANKS,
-} = config;
+} = config.default;
 
 //
 // Builds API urls and standardizes character and server names

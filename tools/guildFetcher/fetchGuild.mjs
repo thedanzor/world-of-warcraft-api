@@ -32,9 +32,10 @@ import {
 
 // Replace the config import section with:
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const configPath = join(__dirname, '../../app.config.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const __dirname = dirname(import.meta.url);
+
+// Import the config as a module instead of parsing as JSON
+const config = await import('../../app.config.js');
 
 const {
     ENCHANTABLE_PIECES,
@@ -48,8 +49,10 @@ const {
     API_BATTLENET_SECRET,
     REGION,
     TANKS,
-    HEALERS
-} = config;  // Note: removed .default since we're reading directly
+    HEALERS,
+    SEASON_START_DATE,
+    CURRENT_RAID
+} = config.default;  // Use .default since we're importing as a module
 
 // Business logic specific variables
 const GUILD_URL = `/data/wow/guild/${GUILD_REALM}/${GUILD_NAME}/roster?${API_PARAM_REQUIREMENTGS}`
@@ -90,7 +93,7 @@ function emitProgress(io, processId, type, data) {
  * @returns {boolean} True if character is active in Season 2
  */
 function isActiveInSeason2(character) {
-    const season2Start = new Date('2025-03-05').getTime();
+    const season2Start = new Date(SEASON_START_DATE).getTime();
     const lastModified = new Date(character.metaData.lastUpdated).getTime();
     return lastModified >= season2Start;
 }
@@ -101,7 +104,6 @@ function isActiveInSeason2(character) {
  * @returns {Object} Lockout status for each difficulty
  */
 function checkRaidLockouts(raidData) {
-    const CURRENT_RAID = "Liberation of Undermine";
     const lockouts = {
         isLocked: false,
         lockedTo: {}
@@ -270,6 +272,8 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                         dataToAppend.raidHistory = raidResponse.expansions.find(item => 
                             item.expansion.name === 'Current Season'
                         ) || {};
+
+                        console.log("Raid response:", dataToAppend.raidHistory);
                     }
 
                     if (dataTypes.includes('mplus')) {

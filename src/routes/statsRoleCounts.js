@@ -21,17 +21,18 @@ router.get('/', async (req, res) => {
       return res.status(404).json({ success: false, error: 'No guild data available' });
     }
     const transformedData = activeMembers.map(transformCharacterData);
-    // Count roles using config values (TANKS, HEALERS)
-    // These may need to be imported from config
-    // const tanks = ...
-    // const healers = ...
-    // const dps = ...
+    
+    // Count roles from transformed data
+    const tanks = transformedData.filter(char => char.metaData?.role === 'tank').length;
+    const healers = transformedData.filter(char => char.metaData?.role === 'healer').length;
+    const dps = transformedData.filter(char => char.metaData?.role === 'dps').length;
+    
     res.json({
       success: true,
       data: {
-        // tanks,
-        // healers,
-        // dps,
+        tanks,
+        healers,
+        dps,
         total: transformedData.length
       },
       timestamp: new Date().toISOString()

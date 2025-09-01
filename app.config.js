@@ -24,6 +24,8 @@ const data = {
     "HEALERS": ["Preservation", "Mistweaver", "Holy", "Discipline", "Restoration"],
     "DIFFICULTY": ["Mythic", "Heroic", "Normal"],
     "_DRAFT_DIFFICULTY": ["LFR", "Raid Finder", "Mythic", "Heroic", "Normal"],
+    "SEASON_START_DATE": "2025-08-01",
+    "CURRENT_RAID": "Manaforge Omega",
     "GUILLD_RANKS": [
         "Guild Lead",
         "Officer",
@@ -37,19 +39,19 @@ const data = {
         "New Recruit"
     ],
     "CURRENT_SEASON_TIER_SETS": [
-        "Cauldron Champion's Encore",
-        "Roots of Reclaiming Blight",
-        "Fel-Dealer's Contraband",
-        "Opulent Treasurescale's Hoard",
-        "Tireless Collector's Bounties",
-        "Jewels of the Aspectral Emissary",
-        "Ageless Serpent's Foresight",
-        "Oath of the Aureate Sentry",
-        "Confessor's Unshakable Virtue",
-        "Spectral Gambler's Last Call",
-        "Currents of the Gale Sovereign",
-        "Spliced Fiendtrader's Influence",
-        "Underpin Strongarm's Muscle"
+        "Hollow Sentinel's Wake ",
+        "Charhound's Vicious Hunt",
+        "Ornaments of the Mother Eagle",
+        "Spellweaver's Immaculate Design",
+        "Midnight Herald's Pledge",
+        "Augur's Ephemeral Plumage ",
+        "Crash of Fallen Storms",
+        "Vows of the Lucent Battalion",
+        "Eulogy to a Dying Star ",
+        "Shroud of the Sudden Eclipse",
+        "Howls of Channeled Fury ",
+        "Inquisitor's Feast of Madness",
+        "Chains of the Living Weapon"
     ]
 }
 

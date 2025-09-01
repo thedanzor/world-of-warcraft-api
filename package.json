@@ -1,12 +1,13 @@
 {
-  "name": "onemoregame_website_backend",
-  "version": "0.0.1",
+  "name": "world-of-warcraft-api",
+  "version": "1.1.0",
   "private": true,
-  "homepage": "https://tnt.scottjones.nl",
+  "homepage": "https://scottjones.nl",
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "cron": "node src/cron.js",
     "fetchGuild": "node ./tools/guildFetcher/fetchGuild.mjs",
     "trackCharacterStats": "node ./tools/scripts/trackCharacterStats.mjs",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
