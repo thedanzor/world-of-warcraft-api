@@ -105,11 +105,11 @@ function applyFilters(data, filters) {
   if (rankFilter !== 'all') {
     if (rankFilter === 'mains') {
       filteredData = filteredData.filter(character => 
-        MAIN_RANKS.includes(GUILLD_RANKS.indexOf(character.guildRank))
+        MAIN_RANKS.includes(character.guildRank)
       );
     } else if (rankFilter === 'alts') {
       filteredData = filteredData.filter(character => 
-        ALT_RANKS.includes(GUILLD_RANKS.indexOf(character.guildRank))
+        ALT_RANKS.includes(character.guildRank)
       );
     }
   }
