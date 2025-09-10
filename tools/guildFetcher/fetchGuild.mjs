@@ -9,8 +9,7 @@ import gradient from 'gradient-string';
 import { 
   findMemberByName, 
   updateMember, 
-  addMember, 
-  removeInactiveMembers 
+  addMember
 } from '../../src/database.js';
 
 
@@ -180,26 +179,6 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
         };
 
         await handleMember(trimmedList[index]);
-
-        // Remove inactive members (those not updated in this sync)
-        emitProgress(io, processId, 'cleanup', {
-            message: 'Removing inactive members...'
-        });
-        
-        try {
-            const removalResult = await removeInactiveMembers(updatedMemberNames);
-            
-            emitProgress(io, processId, 'cleanup', {
-                message: `Removed ${removalResult.modifiedCount} inactive members`,
-                success: true,
-                removedCount: removalResult.modifiedCount
-            });
-        } catch (error) {
-            emitProgress(io, processId, 'error', {
-                message: 'Error removing inactive members',
-                error: error.message
-            });
-        }
 
         emitProgress(io, processId, 'complete', {
             message: 'Guild data update completed successfully!',

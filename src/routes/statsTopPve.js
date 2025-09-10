@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { getAllActiveMembers } from '../database.js';
+import { getAllMembers } from '../database.js';
 import { transformCharacterData } from '../utils.js';
 
 /**
@@ -16,11 +16,11 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const activeMembers = await getAllActiveMembers();
-    if (!activeMembers.length) {
+    const members = await getAllMembers();
+    if (!members.length) {
       return res.status(404).json({ success: false, error: 'No guild data available' });
     }
-    const transformedData = activeMembers.map(transformCharacterData);
+    const transformedData = members.map(transformCharacterData);
     const sortedData = transformedData.sort((a, b) => b.itemLevel - a.itemLevel);
     const mplusPlayers = sortedData
       .filter(character => character.mplus > 0)

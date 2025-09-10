@@ -102,8 +102,7 @@ export async function updateMember(name, server, characterData) {
       ...characterData,
       name: name,
       server: server,
-      lastUpdated: new Date(),
-      isActive: true
+      lastUpdated: new Date()
     };
     
     const result = await membersCollection.updateOne(
@@ -133,7 +132,6 @@ export async function addMember(characterData) {
     const memberData = {
       ...characterData,
       lastUpdated: new Date(),
-      isActive: true,
       createdAt: new Date()
     };
     
@@ -149,70 +147,34 @@ export async function addMember(characterData) {
 }
 
 /**
- * Mark members as inactive if they were not updated in the current sync.
- * @param {string[]} updatedMemberNames - Names of members updated in this sync
- * @returns {Promise<Object>} MongoDB update result
+ * Get all members, sorted by item level (descending).
+ * @returns {Promise<Object[]>} Array of member documents
  */
-export async function removeInactiveMembers(updatedMemberNames) {
-  try {
-    const membersCollection = await getMembersCollection();
-    
-    // Find all members that weren't updated in this sync
-    const inactiveMembers = await membersCollection.find({
-      isActive: true,
-      name: { $nin: updatedMemberNames }
-    }).toArray();
-    
-    if (inactiveMembers.length > 0) {
-      console.log(`🗑️ Removing ${inactiveMembers.length} inactive members:`, 
-        inactiveMembers.map(m => `${m.name}-${m.server}`));
-      
-      const result = await membersCollection.updateMany(
-        { isActive: true, name: { $nin: updatedMemberNames } },
-        { $set: { isActive: false, removedAt: new Date() } }
-      );
-      
-      console.log(`✅ Marked ${result.modifiedCount} members as inactive`);
-      return result;
-    }
-    
-    console.log('✅ No inactive members to remove');
-    return { modifiedCount: 0 };
-  } catch (error) {
-    console.error('❌ Failed to remove inactive members:', error);
-    throw error;
-  }
-}
-
-/**
- * Get all active members, sorted by last update time (descending).
- * @returns {Promise<Object[]>} Array of active member documents
- */
-export async function getAllActiveMembers() {
+export async function getAllMembers() {
   try {
     const membersCollection = await getMembersCollection();
     
     const members = await membersCollection
-      .find({ isActive: true })
-      .sort({ lastUpdated: -1 })
+      .find({})
+      .sort({ 'itemlevel.equiped': -1 })
       .toArray();
     
     return members;
   } catch (error) {
-    console.error('❌ Failed to get all active members:', error);
+    console.error('❌ Failed to get all members:', error);
     throw error;
   }
 }
 
 /**
- * Get the count of active members.
- * @returns {Promise<number>} Number of active members
+ * Get the count of members.
+ * @returns {Promise<number>} Number of members
  */
 export async function getMemberCount() {
   try {
     const membersCollection = await getMembersCollection();
     
-    const count = await membersCollection.countDocuments({ isActive: true });
+    const count = await membersCollection.countDocuments({});
     return count;
   } catch (error) {
     console.error('❌ Failed to get member count:', error);
@@ -221,14 +183,14 @@ export async function getMemberCount() {
 }
 
 /**
- * Check if there is any active member data.
- * @returns {Promise<boolean>} True if there is at least one active member
+ * Check if there is any member data.
+ * @returns {Promise<boolean>} True if there is at least one member
  */
 export async function hasMembersData() {
   try {
     const membersCollection = await getMembersCollection();
     
-    const count = await membersCollection.countDocuments({ isActive: true });
+    const count = await membersCollection.countDocuments({});
     return count > 0;
   } catch (error) {
     console.error('❌ Failed to check members data existence:', error);
@@ -244,7 +206,7 @@ export async function getMembersDataStatus() {
   try {
     const membersCollection = await getMembersCollection();
     
-    const count = await membersCollection.countDocuments({ isActive: true });
+    const count = await membersCollection.countDocuments({});
     
     if (count === 0) {
       return 'no_data';
