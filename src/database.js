@@ -193,6 +193,7 @@ export async function getAllActiveMembers() {
     const membersCollection = await getMembersCollection();
     
     const members = await membersCollection
+      .find({ isActive: true })
       .sort({ lastUpdated: -1 })
       .toArray();
     
