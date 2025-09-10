@@ -3,6 +3,24 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
+## Version 1.3 Changelog 🆕
+
+### New Features
+- **Individual Character Updates**: New `POST /update/:realm/:character` endpoint to update single characters
+- **Update Status Monitoring**: New `GET /update/status` endpoint to check if guild updates are running
+- **Concurrency Control**: Prevents multiple simultaneous guild updates with proper error handling
+
+### Breaking Changes ⚠️
+- **POST `/update`**: Now returns `409 Conflict` when an update is already running
+- **Process IDs**: Changed format from `"1234567890"` to `"guild-update-1234567890"`
+- **Response Format**: Enhanced responses with additional fields for better status tracking
+- **GET `/data`**: Now always applies filtering and pagination (merged with `/data/filtered`)
+- **GET `/data/filtered`**: Deprecated, redirects to `/data`
+- **Data Response Format**: Changed from `statistics` object to `pagination` object
+
+### Migration Required
+Existing clients must be updated to handle the new concurrency control and response formats. See the [Migration Guide](#migration-guide-v12--v13) below for detailed instructions.
+
 ## License
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0).
@@ -152,10 +170,38 @@ export default data;
 
 All endpoints are modular and documented with JSDoc in the codebase. Here are the main endpoints and their responses:
 
-### GET `/data`
-Returns the current guild data and statistics.
+### GET `/data` ⚠️ **BREAKING CHANGE v1.3**
+Returns filtered and paginated guild data. **Note:** This endpoint has been merged with `/data/filtered` and now always applies filtering and pagination.
 
-**Response:**
+**Query Parameters:**
+- `filter` - Filter type: `all`, `missing-enchants`, `locked-normal`, `locked-heroic`, `locked-mythic`, `missing-tier`, `not-ready`, `active-season2`, `has-pvp-rating`, `has-mplus-score`
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 30)
+- `search` - Search by character name
+- `rankFilter` - Filter by rank: `all`, `mains`, `alts`
+- `classFilter` - Filter by class (comma-separated)
+- `specFilter` - Filter by spec: `all`, `tanks`, `healers`, `dps`
+- `minItemLevel` - Minimum item level filter
+
+**v1.3+ Response:**
+```json
+{
+  "success": true,
+  "data": [ ... ],
+  "pagination": {
+    "totalItems": 30,
+    "totalPages": 1,
+    "currentPage": 1,
+    "itemsPerPage": 30,
+    "hasNextPage": false,
+    "hasPreviousPage": false
+  },
+  "filter": "all",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Legacy Response (v1.2 and below):**
 ```json
 {
   "success": true,
@@ -174,29 +220,8 @@ Returns the current guild data and statistics.
 }
 ```
 
-### GET `/data/filtered`
-Returns filtered and paginated guild data.
-
-**Query Parameters:**
-- `filter`, `page`, `limit`, `search`, `rankFilter`, `classFilter`, `specFilter`, `minItemLevel`
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [ ... ],
-  "statistics": {
-    "totalItems": 30,
-    "totalPages": 1,
-    "currentPage": 1,
-    "itemsPerPage": 30,
-    "hasNextPage": false,
-    "hasPreviousPage": false
-  },
-  "filter": "all",
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
+### GET `/data/filtered` ⚠️ **DEPRECATED v1.3**
+This endpoint is now deprecated and redirects to `/data`. Use `/data` instead for all data requests.
 
 ### GET `/stats/missing-enchants`
 Returns statistics for missing enchants.
@@ -261,8 +286,8 @@ Returns role distribution statistics.
 }
 ```
 
-### POST `/update`
-Starts a guild data update process.
+### POST `/update` ⚠️ **BREAKING CHANGE v1.3**
+Starts a guild data update process with concurrency control to prevent multiple simultaneous updates.
 
 **Request Body:**
 ```json
@@ -270,20 +295,92 @@ Starts a guild data update process.
   "dataTypes": ["raid", "mplus", "pvp"]
 }
 ```
-**Response:**
+
+**Success Response:**
 ```json
 {
   "success": true,
-  "message": "Guild update process started",
-  "processId": "1234567890",
+  "message": "Guild update started successfully",
+  "processId": "guild-update-1234567890",
   "dataTypes": ["raid", "mplus", "pvp"]
 }
 ```
 
-### GET `/status`
-Returns the status of active update processes.
+**Conflict Response (409) - When update is already running:**
+```json
+{
+  "success": false,
+  "error": "Guild update already in progress",
+  "processId": "guild-update-1234567890",
+  "message": "Another guild update is currently running. Please wait for it to complete."
+}
+```
+
+### POST `/update/:realm/:character` 🆕 **NEW v1.3**
+Updates a single character by realm and character name.
+
+**URL Parameters:**
+- `realm` - The realm name (e.g., "sylvanas")
+- `character` - The character name (e.g., "holybarry")
+
+**Request Body:**
+```json
+{
+  "dataTypes": ["raid", "mplus", "pvp"]
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Character holybarry-sylvanas updated successfully",
+  "character": { ... },
+  "action": "updated"
+}
+```
+
+**Error Responses:**
+- `400` - Missing required parameters
+- `404` - Character not found
+- `500` - Database or fetch error
+
+### GET `/update/status` 🆕 **NEW v1.3**
+Returns the current status of guild update processes.
 
 **Response:**
+```json
+{
+  "success": true,
+  "isRunning": false,
+  "processId": null,
+  "message": "No guild update is currently running"
+}
+```
+
+**When update is running:**
+```json
+{
+  "success": true,
+  "isRunning": true,
+  "processId": "guild-update-1234567890",
+  "message": "Guild update is currently running (Process ID: guild-update-1234567890)"
+}
+```
+
+### GET `/status` ⚠️ **BREAKING CHANGE v1.3**
+Returns the status of active update processes. **Note:** This endpoint has been updated in v1.3.
+
+**v1.3+ Response:**
+```json
+{
+  "success": true,
+  "activeProcesses": 1,
+  "processes": ["guild-update-1234567890"]
+}
+```
+
+**Legacy Response (v1.2 and below):**
 ```json
 {
   "success": true,
@@ -356,7 +453,216 @@ Handles Season 3 signup submissions.
 }
 ```
 
-## WebSocket Events
+## Migration Guide: v1.2 → v1.3
+
+### Breaking Changes
+
+#### 1. POST `/update` Endpoint Changes
+
+**Before (v1.2):**
+- No concurrency control
+- Could start multiple simultaneous updates
+- Simple success/error responses
+
+**After (v1.3):**
+- **Concurrency control implemented** - prevents multiple simultaneous updates
+- Returns `409 Conflict` when update is already running
+- Enhanced response with `processId` field
+- Process IDs now prefixed with `guild-update-`
+
+**Migration Steps:**
+1. Update your client code to handle `409` responses
+2. Check for `isRunning` status before attempting updates
+3. Use the new `/update/status` endpoint to check if updates are running
+
+#### 2. Process ID Format Changes
+
+**Before (v1.2):**
+```json
+{
+  "processId": "1234567890"
+}
+```
+
+**After (v1.3):**
+```json
+{
+  "processId": "guild-update-1234567890"
+}
+```
+
+#### 3. Data Endpoint Changes
+
+**Before (v1.2):**
+- `/data` - Returned unfiltered data with statistics
+- `/data/filtered` - Returned filtered and paginated data
+
+**After (v1.3):**
+- `/data` - **Now always applies filtering and pagination** (merged with `/data/filtered`)
+- `/data/filtered` - **Deprecated**, redirects to `/data`
+- Response format changed from `statistics` object to `pagination` object
+
+#### 4. New Endpoints Added
+
+- `POST /update/:realm/:character` - Update individual characters
+- `GET /update/status` - Check update status
+
+### Client Code Migration Examples
+
+#### JavaScript/Node.js Example
+
+**Before (v1.2):**
+```javascript
+// Old way - no concurrency handling
+const response = await fetch('/api/update', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ dataTypes: ['raid', 'mplus', 'pvp'] })
+});
+
+const result = await response.json();
+if (result.success) {
+  console.log('Update started');
+} else {
+  console.error('Update failed:', result.error);
+}
+```
+
+**After (v1.3):**
+```javascript
+// New way - with concurrency handling
+async function startGuildUpdate() {
+  // Check if update is already running
+  const statusResponse = await fetch('/api/update/status');
+  const status = await statusResponse.json();
+  
+  if (status.isRunning) {
+    console.log('Update already running:', status.processId);
+    return;
+  }
+  
+  // Start update
+  const response = await fetch('/api/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataTypes: ['raid', 'mplus', 'pvp'] })
+  });
+  
+  const result = await response.json();
+  
+  if (response.status === 409) {
+    console.log('Update already in progress:', result.processId);
+  } else if (result.success) {
+    console.log('Update started:', result.processId);
+  } else {
+    console.error('Update failed:', result.error);
+  }
+}
+
+// Update individual character
+async function updateCharacter(realm, character) {
+  const response = await fetch(`/api/update/${realm}/${character}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataTypes: ['raid', 'mplus', 'pvp'] })
+  });
+  
+  const result = await response.json();
+  
+  if (result.success) {
+    console.log(`Character ${character}-${realm} ${result.action}`);
+  } else {
+    console.error('Character update failed:', result.error);
+  }
+}
+
+// Data endpoint migration
+async function fetchGuildData() {
+  // v1.2 way - separate endpoints
+  // const unfilteredResponse = await fetch('/api/data');
+  // const filteredResponse = await fetch('/api/data/filtered?page=1&limit=30');
+  
+  // v1.3 way - unified endpoint with filtering
+  const response = await fetch('/api/data?page=1&limit=30&filter=all');
+  const result = await response.json();
+  
+  if (result.success) {
+    console.log('Data:', result.data);
+    console.log('Pagination:', result.pagination); // New in v1.3
+    console.log('Filter:', result.filter);
+  } else {
+    console.error('Failed to fetch data:', result.error);
+  }
+}
+```
+
+#### Python Example
+
+**Before (v1.2):**
+```python
+import requests
+
+response = requests.post('/api/update', json={'dataTypes': ['raid', 'mplus', 'pvp']})
+result = response.json()
+
+if result['success']:
+    print('Update started')
+else:
+    print('Update failed:', result['error'])
+```
+
+**After (v1.3):**
+```python
+import requests
+
+def start_guild_update():
+    # Check if update is already running
+    status_response = requests.get('/api/update/status')
+    status = status_response.json()
+    
+    if status['isRunning']:
+        print('Update already running:', status['processId'])
+        return
+    
+    # Start update
+    response = requests.post('/api/update', json={'dataTypes': ['raid', 'mplus', 'pvp']})
+    result = response.json()
+    
+    if response.status_code == 409:
+        print('Update already in progress:', result['processId'])
+    elif result['success']:
+        print('Update started:', result['processId'])
+    else:
+        print('Update failed:', result['error'])
+
+def update_character(realm, character):
+    response = requests.post(f'/api/update/{realm}/{character}', 
+                            json={'dataTypes': ['raid', 'mplus', 'pvp']})
+    result = response.json()
+    
+    if result['success']:
+        print(f"Character {character}-{realm} {result['action']}")
+    else:
+        print('Character update failed:', result['error'])
+
+def fetch_guild_data():
+    # v1.2 way - separate endpoints
+    # unfiltered_response = requests.get('/api/data')
+    # filtered_response = requests.get('/api/data/filtered?page=1&limit=30')
+    
+    # v1.3 way - unified endpoint with filtering
+    response = requests.get('/api/data?page=1&limit=30&filter=all')
+    result = response.json()
+    
+    if result['success']:
+        print('Data:', result['data'])
+        print('Pagination:', result['pagination'])  # New in v1.3
+        print('Filter:', result['filter'])
+    else:
+        print('Failed to fetch data:', result['error'])
+```
+
+### WebSocket Events
 
 Connect to the WebSocket server to receive real-time progress updates:
 

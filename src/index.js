@@ -4,8 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 
 // Import routers
-import dataRouter from './routes/data.js';
-import dataFilteredRouter from './routes/dataFiltered.js';
+import dataFilteredRouter from './routes/data.js';
 import statsMissingEnchantsRouter from './routes/statsMissingEnchants.js';
 import statsTopPvpRouter from './routes/statsTopPvp.js';
 import statsTopPveRouter from './routes/statsTopPve.js';
@@ -15,6 +14,7 @@ import statusRouter from './routes/status.js';
 import healthRouter from './routes/health.js';
 import apiSeason3DataRouter from './routes/apiSeason3Data.js';
 import apiSeason3SignupRouter from './routes/apiSeason3Signup.js';
+import apiCharacterFetchRouter from './routes/apiCharacterFetch.js';
 import { startCron } from './cron.js';
 
 import dotenv from 'dotenv';
@@ -38,17 +38,18 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Register routers
-app.use('/data', dataRouter);
-app.use('/data/filtered', dataFilteredRouter);
-app.use('/stats/missing-enchants', statsMissingEnchantsRouter);
-app.use('/stats/top-pvp', statsTopPvpRouter);
-app.use('/stats/top-pve', statsTopPveRouter);
-app.use('/stats/role-counts', statsRoleCountsRouter);
-app.use('/update', updateRouter);
-app.use('/status', statusRouter);
-app.use('/health', healthRouter);
+app.use('/api/data', dataFilteredRouter);
+app.use('/api/data/filtered', dataFilteredRouter);
+app.use('/api/stats/missing-enchants', statsMissingEnchantsRouter);
+app.use('/api/stats/top-pvp', statsTopPvpRouter);
+app.use('/api/stats/top-pve', statsTopPveRouter);
+app.use('/api/stats/role-counts', statsRoleCountsRouter);
+app.use('/api/update', updateRouter);
+app.use('/api/status', statusRouter);
+app.use('/api/health', healthRouter);
 app.use('/api/season3/data', apiSeason3DataRouter);
 app.use('/api/season3/signup', apiSeason3SignupRouter);
+app.use('/api/fetch', apiCharacterFetchRouter);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -58,8 +59,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// TODO: Move startGuildUpdate and cron logic to a service or utility file if needed
-// ... (keep cron and WebSocket logic here for now) ...
 
 // Error handling middleware
 app.use((error, req, res, next) => {
