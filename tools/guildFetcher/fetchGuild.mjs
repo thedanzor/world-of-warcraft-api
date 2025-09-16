@@ -9,7 +9,8 @@ import gradient from 'gradient-string';
 import { 
   findMemberByName, 
   updateMember, 
-  addMember
+  addMember,
+  logError
 } from '../../src/database.js';
 
 
@@ -82,29 +83,58 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
             message: 'Authenticating with Battle.net API...'
         });
         
-        const clientId = API_BATTLENET_KEY;
-        const clientSecret = API_BATTLENET_SECRET;
-        const BnetApi = new BlizzAPI({ region: REGION, clientId, clientSecret });
-        const token = await BnetApi.getAccessToken();
-        
-        emitProgress(io, processId, 'auth', {
-            message: 'Authentication successful!',
-            success: true
-        });
+        let BnetApi, token;
+        try {
+            const clientId = API_BATTLENET_KEY;
+            const clientSecret = API_BATTLENET_SECRET;
+            BnetApi = new BlizzAPI({ region: REGION, clientId, clientSecret });
+            token = await BnetApi.getAccessToken();
+            
+            emitProgress(io, processId, 'auth', {
+                message: 'Authentication successful!',
+                success: true
+            });
+        } catch (authError) {
+            await logError({
+                type: 'guild-fetch',
+                endpoint: 'battle-net-auth',
+                error: authError,
+                context: { processId, region: REGION },
+                processId
+            });
+            throw authError;
+        }
 
         // Guild fetch
         emitProgress(io, processId, 'guild-fetch', {
             message: 'Fetching guild roster...'
         });
         
-        const guild = await BnetApi.query(`${GUILD_URL}&access_token=${token}`);
-        const trimmedList = guild.members.filter(member => member.character.level >= LEVEL_REQUIREMENT);
-        
-        emitProgress(io, processId, 'guild-fetch', {
-            message: `Found ${trimmedList.length} eligible guild members`,
-            success: true,
-            memberCount: trimmedList.length
-        });
+        let guild, trimmedList;
+        try {
+            guild = await BnetApi.query(`${GUILD_URL}&access_token=${token}`);
+            trimmedList = guild.members.filter(member => member.character.level >= LEVEL_REQUIREMENT);
+            
+            emitProgress(io, processId, 'guild-fetch', {
+                message: `Found ${trimmedList.length} eligible guild members`,
+                success: true,
+                memberCount: trimmedList.length
+            });
+        } catch (guildError) {
+            await logError({
+                type: 'guild-fetch',
+                endpoint: 'guild-roster-fetch',
+                error: guildError,
+                context: { 
+                    processId, 
+                    guildName: GUILD_NAME, 
+                    guildRealm: GUILD_REALM,
+                    guildUrl: GUILD_URL 
+                },
+                processId
+            });
+            throw guildError;
+        }
 
         // Process members
         emitProgress(io, processId, 'member-processing', {
@@ -128,10 +158,32 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
 
             try {
                 // Use the character fetch endpoint to get fresh data
-                const fetchUrl = `http://localhost:${process.env.PORT || 8000}/api/fetch/${server}/${characterName}?dataTypes=${dataTypes.join(',')}`;
+                const host = process.env.HOST || 'localhost';
+                const port = process.env.PORT || 8000;
+                const fetchUrl = `http://${host}:${port}/api/fetch/${server}/${characterName}?dataTypes=${dataTypes.join(',')}`;
                 
                 const response = await fetch(fetchUrl);
                 const result = await response.json();
+                
+                if (!response.ok) {
+                    const fetchError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    fetchError.status = response.status;
+                    await logError({
+                        type: 'guild-fetch',
+                        endpoint: 'character-fetch',
+                        error: fetchError,
+                        context: { 
+                            processId, 
+                            character: `${characterName}-${server}`,
+                            fetchUrl,
+                            responseStatus: response.status,
+                            responseText: await response.text()
+                        },
+                        processId,
+                        character: `${characterName}-${server}`
+                    });
+                    throw fetchError;
+                }
                 
                 if (result.success && result.character) {
                     const character = result.character;
@@ -158,6 +210,18 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                         // Track this member as updated
                         updatedMemberNames.push(characterName);
                     } catch (dbError) {
+                        await logError({
+                            type: 'guild-fetch',
+                            endpoint: 'database-operation',
+                            error: dbError,
+                            context: { 
+                                processId, 
+                                character: `${characterName}-${server}`,
+                                operation: existingMember ? 'update' : 'insert'
+                            },
+                            processId,
+                            character: `${characterName}-${server}`
+                        });
                         console.error(`❌ Database error for ${characterName}-${server}:`, dbError.message);
                         // Continue processing other characters even if this one fails
                     }
@@ -165,6 +229,19 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                     console.log(`⚠️ Character ${characterName}-${server} not found or failed to fetch`);
                 }
             } catch (error) {
+                await logError({
+                    type: 'guild-fetch',
+                    endpoint: 'character-processing',
+                    error: error,
+                    context: { 
+                        processId, 
+                        character: `${characterName}-${server}`,
+                        dataTypes
+                    },
+                    processId,
+                    character: `${characterName}-${server}`
+                });
+                
                 emitProgress(io, processId, 'error', {
                     message: `Error processing ${characterName}-${server}: ${error.message}`,
                     character: `${characterName}-${server}`
@@ -191,6 +268,18 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
         });
         
     } catch (error) {
+        await logError({
+            type: 'guild-fetch',
+            endpoint: 'guild-update-process',
+            error: error,
+            context: { 
+                processId, 
+                dataTypes,
+                memberCount: updatedMemberNames.length
+            },
+            processId
+        });
+        
         emitProgress(io, processId, 'error', {
             message: 'Guild update process failed',
             error: error.message

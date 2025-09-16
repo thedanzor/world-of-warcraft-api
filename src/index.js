@@ -15,6 +15,8 @@ import healthRouter from './routes/health.js';
 import apiSeason3DataRouter from './routes/apiSeason3Data.js';
 import apiSeason3SignupRouter from './routes/apiSeason3Signup.js';
 import apiCharacterFetchRouter from './routes/apiCharacterFetch.js';
+import errorsRouter from './routes/errors.js';
+import { logError } from './database.js';
 import { startCron } from './cron.js';
 
 import dotenv from 'dotenv';
@@ -50,6 +52,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/season3/data', apiSeason3DataRouter);
 app.use('/api/season3/signup', apiSeason3SignupRouter);
 app.use('/api/fetch', apiCharacterFetchRouter);
+app.use('/api/errors', errorsRouter);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -61,7 +64,22 @@ io.on('connection', (socket) => {
 
 
 // Error handling middleware
-app.use((error, req, res, next) => {
+app.use(async (error, req, res, next) => {
+  await logError({
+    type: 'api',
+    endpoint: req.url,
+    error: error,
+    context: {
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      params: req.params,
+      body: req.body,
+      userAgent: req.get('User-Agent'),
+      ip: req.ip
+    }
+  });
+  
   console.error('Unhandled error:', error);
   res.status(500).json({
     success: false,

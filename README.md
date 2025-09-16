@@ -3,7 +3,38 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
-## Version 1.3 Changelog 🆕
+## Version 1.4 Changelog 🆕
+
+### New Features
+- **Comprehensive Error Logging System**: Complete error tracking and management system with MongoDB storage
+- **Error Management API**: New `/api/errors` endpoints for viewing, filtering, and managing error logs
+- **Error Analytics**: Statistics and insights into error patterns and trends
+- **Production-Ready Error Handling**: Non-blocking error logging that won't crash your application
+- **Environment Variable Configuration**: Added `ERRORS_COLLECTION_NAME` for MongoDB error collection
+
+### New Endpoints
+- **GET `/api/errors`** - View error logs with filtering options (type, endpoint, severity, resolved status)
+- **GET `/api/errors/stats`** - Get comprehensive error statistics and analytics
+- **PUT `/api/errors/:id/resolve`** - Mark specific errors as resolved
+- **DELETE `/api/errors/:id`** - Delete individual error logs
+- **DELETE `/api/errors`** - Bulk delete errors with filtering options
+
+### Error Logging Coverage
+- **Guild Fetch Process**: Authentication, roster fetching, character processing, and database operations
+- **API Endpoints**: All endpoints now log detailed error information with request context
+- **Global Error Handler**: Catches and logs all unhandled errors with full request details
+- **Character Fetch Endpoints**: Both main and transmog endpoints with comprehensive error tracking
+
+### Environment Variables
+- **NEW**: `ERRORS_COLLECTION_NAME` - MongoDB collection name for error logs (required)
+
+### Technical Improvements
+- **Fixed Production URLs**: Replaced hardcoded localhost URLs with environment variable configuration
+- **Enhanced Error Context**: Full request details, process IDs, character information, and stack traces
+- **Severity Classification**: Automatic error severity based on HTTP status codes (high/medium/low)
+- **Resolution Tracking**: Track which errors have been addressed and when
+
+## Version 1.3 Changelog
 
 ### New Features
 - **Individual Character Updates**: New `POST /update/:realm/:character` endpoint to update single characters
@@ -94,6 +125,7 @@ MONGODB=mongodb://
 DATABASE_NAME=xxxxx
 SIGNUP_COLLECTION=xxxxx
 MEMBERS_COLLECTION_NAME=xxxxx
+ERRORS_COLLECTION_NAME=xxxxx
 
 PORT=8000
 HOST=0.0.0.0
@@ -452,6 +484,175 @@ Handles Season 3 signup submissions.
   }
 }
 ```
+
+## Error Management API 🆕 **NEW v1.4**
+
+### GET `/api/errors`
+Returns error logs with optional filtering.
+
+**Query Parameters:**
+- `type` - Filter by error type (e.g., 'api', 'guild-fetch', 'database')
+- `endpoint` - Filter by endpoint
+- `resolved` - Filter by resolved status (true/false)
+- `severity` - Filter by severity (high/medium/low)
+- `limit` - Limit number of results (default: 100, max: 1000)
+
+**Response:**
+```json
+{
+  "success": true,
+  "errors": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "type": "api",
+      "endpoint": "/api/fetch/sylvanas/holybarry",
+      "error": {
+        "name": "TypeError",
+        "message": "Cannot read property 'name' of undefined",
+        "stack": "TypeError: Cannot read property...",
+        "code": null,
+        "status": 500,
+        "statusCode": 500
+      },
+      "context": {
+        "method": "GET",
+        "url": "/api/fetch/sylvanas/holybarry",
+        "query": { "dataTypes": "raid,mplus,pvp" },
+        "params": { "realm": "sylvanas", "character": "holybarry" },
+        "userAgent": "Mozilla/5.0...",
+        "ip": "127.0.0.1",
+        "processId": "guild-update-1234567890",
+        "character": "holybarry-sylvanas"
+      },
+      "severity": "high",
+      "resolved": false
+    }
+  ],
+  "count": 1,
+  "filters": {
+    "type": null,
+    "endpoint": null,
+    "resolved": null,
+    "severity": null,
+    "limit": 100
+  }
+}
+```
+
+### GET `/api/errors/stats`
+Returns comprehensive error statistics and analytics.
+
+**Response:**
+```json
+{
+  "success": true,
+  "stats": {
+    "overview": {
+      "total": 150,
+      "resolved": 45,
+      "unresolved": 105,
+      "highSeverity": 12,
+      "mediumSeverity": 89,
+      "lowSeverity": 49
+    },
+    "byType": [
+      { "_id": "api", "count": 95 },
+      { "_id": "guild-fetch", "count": 35 },
+      { "_id": "database", "count": 20 }
+    ],
+    "byEndpoint": [
+      { "_id": "/api/fetch/sylvanas/holybarry", "count": 25 },
+      { "_id": "/api/update", "count": 15 },
+      { "_id": "/api/data", "count": 10 }
+    ]
+  }
+}
+```
+
+### PUT `/api/errors/:id/resolve`
+Marks a specific error as resolved.
+
+**URL Parameters:**
+- `id` - MongoDB ObjectId of the error
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Error marked as resolved",
+  "result": {
+    "matchedCount": 1,
+    "modifiedCount": 1,
+    "acknowledged": true
+  }
+}
+```
+
+### DELETE `/api/errors/:id`
+Deletes a specific error log.
+
+**URL Parameters:**
+- `id` - MongoDB ObjectId of the error
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Error deleted successfully",
+  "result": {
+    "deletedCount": 1,
+    "acknowledged": true
+  }
+}
+```
+
+### DELETE `/api/errors`
+Deletes multiple error logs with optional filtering.
+
+**Query Parameters:**
+- `type` - Delete only errors of specific type
+- `resolved` - Delete only resolved/unresolved errors (true/false)
+- `severity` - Delete only errors of specific severity
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Deleted 25 error logs",
+  "result": {
+    "deletedCount": 25,
+    "acknowledged": true
+  },
+  "filters": {
+    "type": "api",
+    "resolved": true,
+    "severity": null
+  }
+}
+```
+
+## Migration Guide: v1.3 → v1.4
+
+### New Requirements
+
+#### Environment Variables
+- **NEW**: `ERRORS_COLLECTION_NAME` - Add this to your `.env` file for error logging
+- **Example**: `ERRORS_COLLECTION_NAME=error_logs`
+
+#### MongoDB Setup
+- Create a new MongoDB collection for error logs (name specified in `ERRORS_COLLECTION_NAME`)
+- No data migration required - the error logging system will create the collection automatically
+
+### New Features (No Breaking Changes)
+- **Error Logging**: Automatically logs all errors to MongoDB
+- **Error Management API**: New endpoints for viewing and managing error logs
+- **Production URL Fix**: Hardcoded localhost URLs now use environment variables
+
+### Optional Upgrades
+- **Error Monitoring**: Consider setting up monitoring for the new error endpoints
+- **Error Cleanup**: Implement periodic cleanup of old resolved errors
+- **Error Analytics**: Use the new stats endpoint for error trend analysis
 
 ## Migration Guide: v1.2 → v1.3
 

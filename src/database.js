@@ -12,19 +12,22 @@ const DB_NAME = process.env.DATABASE_NAME;
 const SEASON_SIGN_UP = process.env.SIGNUP_COLLECTION;
 // Collection name for members data
 const MEMBERS_COLLECTION_NAME = process.env.MEMBERS_COLLECTION_NAME;
+// Collection name for error logs
+const ERRORS_COLLECTION_NAME = process.env.ERRORS_COLLECTION_NAME;
 
 // Declare singleton variables for MongoDB connection
 let client;
 let db;
 let collection;
 
-console.log(process.env, MONGODB_URI, DB_NAME, SEASON_SIGN_UP, MEMBERS_COLLECTION_NAME);
+console.log(process.env, MONGODB_URI, DB_NAME, SEASON_SIGN_UP, MEMBERS_COLLECTION_NAME, ERRORS_COLLECTION_NAME);
 
 // Check for required environment variables
 if (!MONGODB_URI) throw new Error('Missing required environment variable: MONGODB_URI');
 if (!DB_NAME) throw new Error('Missing required environment variable: DB_NAME');
 if (!SEASON_SIGN_UP) throw new Error('Missing required environment variable: SEASON_SIGN_UP');
 if (!MEMBERS_COLLECTION_NAME) throw new Error('Missing required environment variable: MEMBERS_COLLECTION_NAME');
+if (!ERRORS_COLLECTION_NAME) throw new Error('Missing required environment variable: ERRORS_COLLECTION_NAME');
 
 /**
  * Connect to MongoDB and return the client, db, and collection objects.
@@ -415,6 +418,234 @@ process.on('SIGINT', async () => {
   await closeDatabase();
   process.exit(0);
 });
+
+// ===== ERROR LOGGING FUNCTIONS =====
+
+/**
+ * Get the MongoDB collection for error logs.
+ * @returns {Promise<Collection>} The errors collection
+ */
+async function getErrorsCollection() {
+  const connection = await connectToDatabase();
+  if (!connection || !connection.db) {
+    throw new Error('Database connection failed');
+  }
+  return connection.db.collection(ERRORS_COLLECTION_NAME);
+}
+
+/**
+ * Log an error to the MongoDB errors collection.
+ * @param {Object} errorData - Error data to log
+ * @param {string} errorData.type - Type of error (e.g., 'api', 'guild-fetch', 'database')
+ * @param {string} errorData.endpoint - API endpoint or process name where error occurred
+ * @param {Error} errorData.error - The original error object
+ * @param {Object} errorData.context - Additional context data
+ * @param {string} errorData.processId - Process ID if applicable
+ * @param {string} errorData.character - Character name if applicable
+ * @returns {Promise<Object>} MongoDB insert result
+ */
+export async function logError({ type, endpoint, error, context = {}, processId = null, character = null }) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    
+    const errorLog = {
+      timestamp: new Date(),
+      type: type || 'unknown',
+      endpoint: endpoint || 'unknown',
+      error: {
+        name: error?.name || 'UnknownError',
+        message: error?.message || 'Unknown error occurred',
+        stack: error?.stack || null,
+        code: error?.code || null,
+        status: error?.status || null,
+        statusCode: error?.statusCode || null
+      },
+      context: {
+        ...context,
+        processId,
+        character,
+        userAgent: context.userAgent || null,
+        ip: context.ip || null,
+        url: context.url || null,
+        method: context.method || null,
+        body: context.body || null,
+        query: context.query || null,
+        params: context.params || null
+      },
+      severity: error?.status >= 500 || error?.statusCode >= 500 ? 'high' : 
+                error?.status >= 400 || error?.statusCode >= 400 ? 'medium' : 'low',
+      resolved: false
+    };
+    
+    const result = await errorsCollection.insertOne(errorLog);
+    
+    console.log(`📝 Error logged to MongoDB: ${result.insertedId}`);
+    return result;
+  } catch (logError) {
+    console.error('❌ Failed to log error to MongoDB:', logError);
+    // Don't throw error here to avoid infinite loops
+    return { insertedId: null };
+  }
+}
+
+/**
+ * Get all error logs from MongoDB, sorted by timestamp (descending).
+ * @param {Object} options - Query options
+ * @param {string} options.type - Filter by error type
+ * @param {string} options.endpoint - Filter by endpoint
+ * @param {boolean} options.resolved - Filter by resolved status
+ * @param {string} options.severity - Filter by severity
+ * @param {number} options.limit - Limit number of results
+ * @returns {Promise<Object[]>} Array of error log documents
+ */
+export async function getErrorLogs({ type = null, endpoint = null, resolved = null, severity = null, limit = 100 } = {}) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    
+    // Build query filter
+    const filter = {};
+    if (type) filter.type = type;
+    if (endpoint) filter.endpoint = endpoint;
+    if (resolved !== null) filter.resolved = resolved;
+    if (severity) filter.severity = severity;
+    
+    const errors = await errorsCollection
+      .find(filter)
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    
+    return errors;
+  } catch (error) {
+    console.error('❌ Failed to get error logs from MongoDB:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get error statistics from MongoDB.
+ * @returns {Promise<Object>} Error statistics
+ */
+export async function getErrorStats() {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    
+    const stats = await errorsCollection.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          resolved: { $sum: { $cond: ['$resolved', 1, 0] } },
+          unresolved: { $sum: { $cond: ['$resolved', 0, 1] } },
+          highSeverity: { $sum: { $cond: [{ $eq: ['$severity', 'high'] }, 1, 0] } },
+          mediumSeverity: { $sum: { $cond: [{ $eq: ['$severity', 'medium'] }, 1, 0] } },
+          lowSeverity: { $sum: { $cond: [{ $eq: ['$severity', 'low'] }, 1, 0] } }
+        }
+      }
+    ]).toArray();
+    
+    const typeStats = await errorsCollection.aggregate([
+      {
+        $group: {
+          _id: '$type',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]).toArray();
+    
+    const endpointStats = await errorsCollection.aggregate([
+      {
+        $group: {
+          _id: '$endpoint',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]).toArray();
+    
+    return {
+      overview: stats[0] || { total: 0, resolved: 0, unresolved: 0, highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 },
+      byType: typeStats,
+      byEndpoint: endpointStats
+    };
+  } catch (error) {
+    console.error('❌ Failed to get error stats from MongoDB:', error);
+    throw error;
+  }
+}
+
+/**
+ * Mark an error as resolved.
+ * @param {string} errorId - MongoDB ObjectId of the error
+ * @returns {Promise<Object>} MongoDB update result
+ */
+export async function resolveError(errorId) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    const { ObjectId } = await import('mongodb');
+    
+    const result = await errorsCollection.updateOne(
+      { _id: new ObjectId(errorId) },
+      { $set: { resolved: true, resolvedAt: new Date() } }
+    );
+    
+    console.log(`✅ Error ${errorId} marked as resolved`);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to resolve error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a specific error log.
+ * @param {string} errorId - MongoDB ObjectId of the error
+ * @returns {Promise<Object>} MongoDB delete result
+ */
+export async function deleteError(errorId) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    const { ObjectId } = await import('mongodb');
+    
+    const result = await errorsCollection.deleteOne({ _id: new ObjectId(errorId) });
+    
+    console.log(`🗑️ Error ${errorId} deleted`);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to delete error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete all error logs.
+ * @param {Object} options - Delete options
+ * @param {string} options.type - Delete only errors of specific type
+ * @param {boolean} options.resolved - Delete only resolved/unresolved errors
+ * @param {string} options.severity - Delete only errors of specific severity
+ * @returns {Promise<Object>} MongoDB delete result
+ */
+export async function deleteAllErrors({ type = null, resolved = null, severity = null } = {}) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    
+    // Build query filter
+    const filter = {};
+    if (type) filter.type = type;
+    if (resolved !== null) filter.resolved = resolved;
+    if (severity) filter.severity = severity;
+    
+    const result = await errorsCollection.deleteMany(filter);
+    
+    console.log(`🗑️ Deleted ${result.deletedCount} error logs`);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to delete all errors:', error);
+    throw error;
+  }
+}
 
 // Graceful shutdown handler for SIGTERM (kill signal)
 process.on('SIGTERM', async () => {

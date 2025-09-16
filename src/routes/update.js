@@ -5,7 +5,7 @@
 
 import express from 'express';
 import { startGuildUpdate } from '../../tools/guildFetcher/fetchGuild.mjs';
-import { findMemberByName, updateMember, addMember } from '../database.js';
+import { findMemberByName, updateMember, addMember, logError } from '../database.js';
 
 const router = express.Router();
 
@@ -45,10 +45,25 @@ router.post('/', async (req, res) => {
         currentProcessId = null;
         console.log(`Guild update process ${processId} completed successfully`);
       })
-      .catch((error) => {
+      .catch(async (error) => {
         // Reset running state on error
         isGuildUpdateRunning = false;
         currentProcessId = null;
+        
+        await logError({
+          type: 'api',
+          endpoint: '/update',
+          error: error,
+          context: {
+            method: req.method,
+            url: req.url,
+            body: req.body,
+            processId,
+            userAgent: req.get('User-Agent'),
+            ip: req.ip
+          }
+        });
+        
         console.error(`Guild update process ${processId} failed:`, error.message);
       });
 
@@ -62,6 +77,20 @@ router.post('/', async (req, res) => {
     // Reset running state on error
     isGuildUpdateRunning = false;
     currentProcessId = null;
+    
+    await logError({
+      type: 'api',
+      endpoint: '/update',
+      error: error,
+      context: {
+        method: req.method,
+        url: req.url,
+        body: req.body,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      }
+    });
+    
     res.status(500).json({ 
       success: false, 
       error: 'Failed to start guild update', 
@@ -95,7 +124,9 @@ router.post('/:realm/:character', async (req, res) => {
     const server = realm.toLowerCase();
 
     // Use the existing character fetch endpoint to get fresh data
-    const fetchUrl = `http://localhost:${process.env.PORT || 8000}/api/fetch/${server}/${characterName}?dataTypes=${dataTypes.join(',')}`;
+    const host = process.env.HOST || 'localhost';
+    const port = process.env.PORT || 8000;
+    const fetchUrl = `http://${host}:${port}/api/fetch/${server}/${characterName}?dataTypes=${dataTypes.join(',')}`;
     
     const response = await fetch(fetchUrl);
     const result = await response.json();
@@ -131,6 +162,21 @@ router.post('/:realm/:character', async (req, res) => {
         action: existingMember ? 'updated' : 'added'
       });
     } catch (dbError) {
+      await logError({
+        type: 'api',
+        endpoint: `/update/${realm}/${character}`,
+        error: dbError,
+        context: {
+          method: req.method,
+          url: req.url,
+          params: req.params,
+          body: req.body,
+          character: `${characterName}-${server}`,
+          userAgent: req.get('User-Agent'),
+          ip: req.ip
+        }
+      });
+      
       console.error(`❌ Database error for ${characterName}-${server}:`, dbError.message);
       res.status(500).json({
         success: false,
@@ -139,6 +185,20 @@ router.post('/:realm/:character', async (req, res) => {
       });
     }
   } catch (error) {
+    await logError({
+      type: 'api',
+      endpoint: `/update/${realm}/${character}`,
+      error: error,
+      context: {
+        method: req.method,
+        url: req.url,
+        params: req.params,
+        body: req.body,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      }
+    });
+    
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update character', 

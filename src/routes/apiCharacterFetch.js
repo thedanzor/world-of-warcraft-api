@@ -11,6 +11,7 @@ import {
   hasEnchant,
   isTierItem
 } from '../../tools/guildFetcher/utils.mjs';
+import { logError } from '../database.js';
 
 import config from '../../app.config.js';
 
@@ -347,6 +348,20 @@ router.get('/:realm/:character', async (req, res) => {
     });
 
   } catch (error) {
+    await logError({
+      type: 'api',
+      endpoint: `/api/fetch/${realm}/${character}`,
+      error: error,
+      context: {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        params: req.params,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      }
+    });
+    
     console.error('❌ Error fetching character data:', error);
     res.status(500).json({
       success: false,
@@ -403,6 +418,20 @@ router.get('/:realm/:character/transmog', async (req, res) => {
     });
 
   } catch (error) {
+    await logError({
+      type: 'api',
+      endpoint: `/api/fetch/${realm}/${character}/transmog`,
+      error: error,
+      context: {
+        method: req.method,
+        url: req.url,
+        query: req.query,
+        params: req.params,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      }
+    });
+    
     console.error('❌ Error fetching character transmog data:', error);
     res.status(500).json({
       success: false,
