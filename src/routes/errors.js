@@ -7,6 +7,7 @@ import express from 'express';
 import { 
   getErrorLogs, 
   getErrorStats, 
+  getErrorById,
   resolveError, 
   deleteError, 
   deleteAllErrors,
@@ -118,6 +119,61 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch error statistics',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /errors/:id - Get a specific error log by ID.
+ * @route GET /errors/:id
+ * @param {string} id - MongoDB ObjectId of the error
+ * @returns {Object} JSON response with error details.
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing error ID',
+        message: 'Error ID is required'
+      });
+    }
+    
+    const error = await getErrorById(id);
+    
+    if (!error) {
+      return res.status(404).json({
+        success: false,
+        error: 'Error not found',
+        message: `No error found with ID: ${id}`
+      });
+    }
+    
+    res.json({
+      success: true,
+      error
+    });
+    
+  } catch (error) {
+    await logError({
+      type: 'api',
+      endpoint: `/errors/${req.params.id}`,
+      error: error,
+      context: {
+        method: req.method,
+        url: req.url,
+        params: req.params,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      }
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch error details',
       message: error.message
     });
   }
@@ -247,6 +303,8 @@ router.delete('/', async (req, res) => {
   try {
     const { type, resolved, severity } = req.query;
     
+    console.log('Bulk delete request received:', { type, resolved, severity });
+    
     // Parse resolved parameter
     let resolvedFilter = null;
     if (resolved !== undefined) {
@@ -260,7 +318,11 @@ router.delete('/', async (req, res) => {
       severity: severity || null
     };
     
+    console.log('Delete options:', deleteOptions);
+    
     const result = await deleteAllErrors(deleteOptions);
+    
+    console.log('Delete result:', result);
     
     res.json({
       success: true,

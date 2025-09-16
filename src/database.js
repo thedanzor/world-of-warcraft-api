@@ -577,6 +577,31 @@ export async function getErrorStats() {
 }
 
 /**
+ * Get a specific error by ID from MongoDB.
+ * @param {string} errorId - MongoDB ObjectId of the error
+ * @returns {Promise<Object|null>} Error document or null if not found
+ */
+export async function getErrorById(errorId) {
+  try {
+    const errorsCollection = await getErrorsCollection();
+    const { ObjectId } = await import('mongodb');
+    
+    const error = await errorsCollection.findOne({ _id: new ObjectId(errorId) });
+    
+    if (error) {
+      console.log(`✅ Retrieved error ${errorId} from MongoDB`);
+    } else {
+      console.log(`⚠️ Error ${errorId} not found in MongoDB`);
+    }
+    
+    return error;
+  } catch (error) {
+    console.error('❌ Failed to get error by ID from MongoDB:', error);
+    throw error;
+  }
+}
+
+/**
  * Mark an error as resolved.
  * @param {string} errorId - MongoDB ObjectId of the error
  * @returns {Promise<Object>} MongoDB update result
