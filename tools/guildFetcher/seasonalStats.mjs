@@ -230,13 +230,19 @@ export function processGuildSeasonalStats(characters) {
         guildStats.highestTimedKey = seasonalStats.highestTimedKey;
       }
 
+      // Calculate weighted score: total score * highest key
+      const currentRating = character.currentSeason?.current_mythic_rating?.rating || character.processedStats?.mythicPlusScore || 0;
+      const highestKey = seasonalStats.highestKeyOverall;
+      const weightedScore = currentRating * highestKey;
+
       // Track character stats for top players
       characterStats.push({
         name: character.name,
         server: character.server,
         spec: character.metaData?.spec || 'Unknown',
         class: character.metaData?.class || 'Unknown',
-        rating: character.processedStats?.mythicPlusScore || character.raw_mplus?.current_mythic_rating?.rating || 0,
+        rating: currentRating, // Keep original rating for display
+        weightedScore: weightedScore, // New weighted score for sorting
         highestTimedKey: seasonalStats.highestTimedKey,
         highestKeyOverall: seasonalStats.highestKeyOverall,
         totalRuns: seasonalStats.totalRuns,
@@ -320,11 +326,11 @@ export function processGuildSeasonalStats(characters) {
 
   // Calculate guild averages
   guildStats.averageRating = guildStats.charactersWithMplus > 0 ? 
-    characters.reduce((sum, char) => sum + (char.processedStats?.mythicPlusScore || char.raw_mplus?.current_mythic_rating?.rating || 0), 0) / guildStats.charactersWithMplus : 0;
+    characters.reduce((sum, char) => sum + (char.currentSeason?.current_mythic_rating?.rating || char.processedStats?.mythicPlusScore || 0), 0) / guildStats.charactersWithMplus : 0;
 
-  // Sort top players by rating
+  // Sort top players by weighted score (rating * highest key)
   guildStats.topPlayers = characterStats
-    .sort((a, b) => b.rating - a.rating)
+    .sort((a, b) => b.weightedScore - a.weightedScore)
     .slice(0, 10);
 
   // Process dungeon leaderboard
