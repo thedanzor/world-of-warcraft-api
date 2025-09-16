@@ -15,6 +15,7 @@ const {
     HEALERS,
     MAIN_RANKS,
     ALT_RANKS,
+    CURRENT_MPLUS_SEASON
 } = config.default;
 
 //
@@ -34,6 +35,8 @@ const getCharacterInformation = (member, token) => {
         bracketProgressUrl: (bracket) =>
             `/profile/wow/character/${server}/${characterName}/pvp-bracket/${bracket}?${API_PARAM_REQUIREMENTGS}&access_token=${token}`,
         mythicProgressUrl: `/profile/wow/character/${server}/${characterName}/mythic-keystone-profile?${API_PARAM_REQUIREMENTGS}&access_token=${token}`,
+        mythicSeasonUrl: (seasonId) =>
+            `/profile/wow/character/${server}/${characterName}/mythic-keystone-profile/season/${CURRENT_MPLUS_SEASON}?${API_PARAM_REQUIREMENTGS}&access_token=${token}`,
         transmogsUrl: `/profile/wow/character/${server}/${characterName}/collections/transmogs?${API_PARAM_REQUIREMENTGS}&access_token=${token}`,
     }
 }

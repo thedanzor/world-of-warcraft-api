@@ -3,7 +3,43 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
-## Version 1.4 Changelog 🆕
+## Version 1.5.0 Changelog 🆕
+
+### New Features
+- **Comprehensive Seasonal Statistics System**: Complete Mythic+ seasonal data processing and analysis
+- **Individual Character Seasonal Stats**: New `/api/seasonal-stats/character/:realm/:character` endpoint for detailed character seasonal performance
+- **Seasonal Leaderboards**: New `/api/seasonal-stats/leaderboard` endpoint with player, dungeon, and role-based rankings
+- **Enhanced Character Fetch Endpoint**: Improved `/api/fetch/:realm/:character` with raid lockout tracking and season activity detection
+- **Seasonal Data Processing**: Advanced algorithms for processing Mythic+ runs, dungeon statistics, and team play analysis
+
+### New Endpoints
+- **GET `/api/seasonal-stats`** - Get latest seasonal statistics with optional season filtering
+- **GET `/api/seasonal-stats/all`** - Get all seasonal statistics across all seasons
+- **GET `/api/seasonal-stats/character/:realm/:character`** - Get detailed seasonal statistics for a specific character
+- **GET `/api/seasonal-stats/leaderboard`** - Get seasonal leaderboards (players, dungeons, roles)
+- **GET `/api/seasonal-stats/status`** - Check seasonal statistics availability and status
+
+### Enhanced Character Data
+- **Raid Lockout Tracking**: Automatic detection of raid lockout status across all difficulties
+- **Season Activity Detection**: Smart detection of character activity since season start
+- **Processed Statistics**: Pre-calculated role assignments, ratings, and gear status
+- **Gear Analysis**: Enhanced enchantment and tier set detection with detailed status reporting
+
+### Database Improvements
+- **Seasonal Statistics Collection**: New MongoDB collection for storing processed seasonal data
+- **Advanced Data Processing**: Sophisticated algorithms for analyzing Mythic+ runs and team compositions
+- **Performance Optimizations**: Efficient data storage and retrieval for seasonal statistics
+
+### Environment Variables
+- **NEW**: `TOP_SEASONAL_COLLECTION_NAME` - MongoDB collection name for seasonal statistics (required)
+
+### Technical Improvements
+- **Modular Code Architecture**: Separated seasonal statistics processing into dedicated modules
+- **Enhanced Error Handling**: Comprehensive error logging for all seasonal statistics operations
+- **Data Validation**: Robust validation for character data and seasonal statistics
+- **Performance Monitoring**: Detailed logging and performance tracking for seasonal data processing
+
+## Version 1.4 Changelog
 
 ### New Features
 - **Comprehensive Error Logging System**: Complete error tracking and management system with MongoDB storage
@@ -126,6 +162,7 @@ DATABASE_NAME=xxxxx
 SIGNUP_COLLECTION=xxxxx
 MEMBERS_COLLECTION_NAME=xxxxx
 ERRORS_COLLECTION_NAME=xxxxx
+TOP_SEASONAL_COLLECTION_NAME=xxxxx
 
 PORT=8000
 HOST=0.0.0.0
@@ -438,6 +475,206 @@ Health check endpoint.
 }
 ```
 
+### GET `/api/seasonal-stats` 🆕 **NEW v1.5.0**
+Returns latest seasonal statistics with optional season filtering.
+
+**Query Parameters:**
+- `season` - Optional season number to filter by
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "season": 15,
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "topPlayers": [
+      {
+        "name": "Player1",
+        "server": "sylvanas",
+        "highestKey": 25,
+        "highestTimedKey": 24,
+        "totalRuns": 150,
+        "completionRate": 85.5,
+        "averageRating": 2850
+      }
+    ],
+    "dungeonLeaderboard": {
+      "Dungeon Name": {
+        "highestKey": 25,
+        "totalRuns": 45,
+        "averageRating": 2800
+      }
+    },
+    "roleStats": {
+      "TANK": { "averageRating": 2700, "totalPlayers": 5 },
+      "HEALER": { "averageRating": 2750, "totalPlayers": 8 },
+      "DPS": { "averageRating": 2800, "totalPlayers": 17 }
+    }
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### GET `/api/seasonal-stats/all` 🆕 **NEW v1.5.0**
+Returns all seasonal statistics across all seasons.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "season": 15,
+      "lastUpdated": "2024-01-01T00:00:00.000Z",
+      "topPlayers": [ ... ],
+      "dungeonLeaderboard": { ... },
+      "roleStats": { ... }
+    },
+    {
+      "season": 14,
+      "lastUpdated": "2023-12-01T00:00:00.000Z",
+      "topPlayers": [ ... ],
+      "dungeonLeaderboard": { ... },
+      "roleStats": { ... }
+    }
+  ],
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### GET `/api/seasonal-stats/character/:realm/:character` 🆕 **NEW v1.5.0**
+Returns detailed seasonal statistics for a specific character.
+
+**URL Parameters:**
+- `realm` - The realm name (e.g., "sylvanas")
+- `character` - The character name (e.g., "holybarry")
+
+**Response:**
+```json
+{
+  "success": true,
+  "character": {
+    "name": "holybarry",
+    "server": "sylvanas",
+    "spec": "Holy",
+    "class": "Priest",
+    "currentRating": 2850
+  },
+  "seasonalStats": {
+    "highestTimedKey": 24,
+    "highestKeyOverall": 25,
+    "totalRuns": 150,
+    "completedRuns": 128,
+    "averageRating": 2850,
+    "completionRate": 85.3,
+    "topPlayedMembers": [
+      {
+        "name": "Player1",
+        "spec": "Protection",
+        "server": "sylvanas",
+        "count": 45
+      }
+    ],
+    "dungeonStats": {
+      "Dungeon Name": {
+        "totalRuns": 25,
+        "timedRuns": 22,
+        "highestKey": 25,
+        "averageRating": 2800
+      }
+    },
+    "affixStats": {
+      "Fortified": { "runs": 75, "averageRating": 2800 },
+      "Tyrannical": { "runs": 75, "averageRating": 2900 }
+    },
+    "roleStats": {
+      "TANK": { "runs": 30, "averageRating": 2750 },
+      "HEALER": { "runs": 120, "averageRating": 2850 }
+    },
+    "totalPlaytime": 45000
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### GET `/api/seasonal-stats/leaderboard` 🆕 **NEW v1.5.0**
+Returns seasonal leaderboards with different ranking types.
+
+**Query Parameters:**
+- `type` - Leaderboard type: `players`, `dungeons`, `roles` (default: `players`)
+- `limit` - Number of results to return (default: 10)
+
+**Response (Players):**
+```json
+{
+  "success": true,
+  "type": "players",
+  "limit": 10,
+  "data": [
+    {
+      "name": "Player1",
+      "server": "sylvanas",
+      "highestKey": 25,
+      "highestTimedKey": 24,
+      "totalRuns": 150,
+      "averageRating": 2850
+    }
+  ],
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Response (Dungeons):**
+```json
+{
+  "success": true,
+  "type": "dungeons",
+  "limit": 10,
+  "data": [
+    {
+      "name": "Dungeon Name",
+      "highestKey": 25,
+      "totalRuns": 45,
+      "averageRating": 2800
+    }
+  ],
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Response (Roles):**
+```json
+{
+  "success": true,
+  "type": "roles",
+  "limit": 10,
+  "data": [
+    {
+      "name": "TANK",
+      "averageRating": 2700,
+      "totalPlayers": 5,
+      "totalRuns": 150
+    }
+  ],
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### GET `/api/seasonal-stats/status` 🆕 **NEW v1.5.0**
+Checks seasonal statistics availability and status.
+
+**Response:**
+```json
+{
+  "success": true,
+  "hasData": true,
+  "season": 15,
+  "lastUpdated": "2024-01-01T00:00:00.000Z",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
 ### GET `/api/season3/data`
 Returns all Season 3 signups.
 
@@ -631,6 +868,29 @@ Deletes multiple error logs with optional filtering.
   }
 }
 ```
+
+## Migration Guide: v1.4 → v1.5.0
+
+### New Requirements
+
+#### Environment Variables
+- **NEW**: `TOP_SEASONAL_COLLECTION_NAME` - Add this to your `.env` file for seasonal statistics
+- **Example**: `TOP_SEASONAL_COLLECTION_NAME=seasonal_stats`
+
+#### MongoDB Setup
+- Create a new MongoDB collection for seasonal statistics (name specified in `TOP_SEASONAL_COLLECTION_NAME`)
+- No data migration required - the seasonal statistics system will create the collection automatically
+
+### New Features (No Breaking Changes)
+- **Seasonal Statistics**: Comprehensive Mythic+ seasonal data processing and analysis
+- **Character Seasonal Stats**: Individual character seasonal performance tracking
+- **Enhanced Character Fetch**: Improved character data with raid lockouts and season activity
+- **Seasonal Leaderboards**: Player, dungeon, and role-based rankings
+
+### Optional Upgrades
+- **Seasonal Data Monitoring**: Consider setting up monitoring for seasonal statistics endpoints
+- **Character Detail Pages**: Use the new character seasonal stats for detailed character profiles
+- **Leaderboard Integration**: Implement seasonal leaderboards in your frontend applications
 
 ## Migration Guide: v1.3 → v1.4
 

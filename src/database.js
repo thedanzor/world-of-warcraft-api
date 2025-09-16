@@ -14,6 +14,8 @@ const SEASON_SIGN_UP = process.env.SIGNUP_COLLECTION;
 const MEMBERS_COLLECTION_NAME = process.env.MEMBERS_COLLECTION_NAME;
 // Collection name for error logs
 const ERRORS_COLLECTION_NAME = process.env.ERRORS_COLLECTION_NAME;
+// Collection name for top seasonal statistics
+const TOP_SEASONAL_COLLECTION_NAME = process.env.TOP_SEASONAL_COLLECTION_NAME || 'topSeasonal';
 
 // Declare singleton variables for MongoDB connection
 let client;
@@ -669,6 +671,132 @@ export async function deleteAllErrors({ type = null, resolved = null, severity =
   } catch (error) {
     console.error('❌ Failed to delete all errors:', error);
     throw error;
+  }
+}
+
+// ===== TOP SEASONAL COLLECTION FUNCTIONS =====
+
+/**
+ * Get the MongoDB collection for top seasonal statistics.
+ * @returns {Promise<Collection>} The top seasonal collection
+ */
+async function getTopSeasonalCollection() {
+  const connection = await connectToDatabase();
+  if (!connection || !connection.db) {
+    throw new Error('Database connection failed');
+  }
+  return connection.db.collection(TOP_SEASONAL_COLLECTION_NAME);
+}
+
+/**
+ * Save or update top seasonal statistics to MongoDB.
+ * @param {Object} seasonalStats - Seasonal statistics data
+ * @returns {Promise<Object>} MongoDB upsert result
+ */
+export async function saveTopSeasonalStats(seasonalStats) {
+  try {
+    const topSeasonalCollection = await getTopSeasonalCollection();
+    
+    const document = {
+      ...seasonalStats,
+      lastUpdated: new Date(),
+      createdAt: seasonalStats.createdAt || new Date()
+    };
+    
+    const result = await topSeasonalCollection.updateOne(
+      { season: seasonalStats.season },
+      { $set: document },
+      { upsert: true }
+    );
+    
+    console.log(`✅ Top seasonal stats saved for season ${seasonalStats.season}`);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to save top seasonal stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the latest top seasonal statistics from MongoDB.
+ * @param {number} season - Season number (optional, defaults to latest)
+ * @returns {Promise<Object|null>} Top seasonal statistics or null if not found
+ */
+export async function getTopSeasonalStats(season = null) {
+  try {
+    const topSeasonalCollection = await getTopSeasonalCollection();
+    
+    let query = {};
+    if (season !== null) {
+      query.season = season;
+    }
+    
+    const stats = await topSeasonalCollection
+      .find(query)
+      .sort({ season: -1 })
+      .limit(1)
+      .toArray();
+    
+    return stats.length > 0 ? stats[0] : null;
+  } catch (error) {
+    console.error('❌ Failed to get top seasonal stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all top seasonal statistics from MongoDB.
+ * @returns {Promise<Object[]>} Array of seasonal statistics documents
+ */
+export async function getAllTopSeasonalStats() {
+  try {
+    const topSeasonalCollection = await getTopSeasonalCollection();
+    
+    const stats = await topSeasonalCollection
+      .find({})
+      .sort({ season: -1 })
+      .toArray();
+    
+    return stats;
+  } catch (error) {
+    console.error('❌ Failed to get all top seasonal stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete top seasonal statistics for a specific season.
+ * @param {number} season - Season number
+ * @returns {Promise<Object>} MongoDB delete result
+ */
+export async function deleteTopSeasonalStats(season) {
+  try {
+    const topSeasonalCollection = await getTopSeasonalCollection();
+    
+    const result = await topSeasonalCollection.deleteOne({ season });
+    
+    console.log(`🗑️ Top seasonal stats for season ${season} deleted`);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to delete top seasonal stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if top seasonal statistics exist for a specific season.
+ * @param {number} season - Season number
+ * @returns {Promise<boolean>} True if statistics exist
+ */
+export async function hasTopSeasonalStats(season) {
+  try {
+    const topSeasonalCollection = await getTopSeasonalCollection();
+    
+    const count = await topSeasonalCollection.countDocuments({ season });
+    return count > 0;
+  } catch (error) {
+    console.error('❌ Failed to check top seasonal stats existence:', error);
+    return false;
   }
 }
 

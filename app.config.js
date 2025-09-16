@@ -26,6 +26,7 @@ const data = {
     "_DRAFT_DIFFICULTY": ["LFR", "Raid Finder", "Mythic", "Heroic", "Normal"],
     "SEASON_START_DATE": "2025-08-01",
     "CURRENT_RAID": "Manaforge Omega",
+    "CURRENT_MPLUS_SEASON": 15,
     "GUILLD_RANKS": [
         "Guild Lead",
         "Officer",

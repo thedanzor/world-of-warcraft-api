@@ -28,7 +28,8 @@ const {
   HEALERS,
   ENCHANTABLE_PIECES,
   SEASON_START_DATE,
-  CURRENT_RAID
+  CURRENT_RAID,
+  CURRENT_MPLUS_SEASON
 } = config;
 
 /**
@@ -145,6 +146,7 @@ router.get('/:realm/:character', async (req, res) => {
       equipmentUrl,
       raidProgressUrl,
       mythicProgressUrl,
+      mythicSeasonUrl,
       pvpProgressUrl,
       bracketProgressUrl,
       mediaUrl,
@@ -230,9 +232,32 @@ router.get('/:realm/:character', async (req, res) => {
       try {
         const mplusResponse = await BnetApi.query(mythicProgressUrl);
         dataToAppend.mplus = mplusResponse;
+        
+        // Check if character has seasons data and fetch current season
+        if (mplusResponse?.seasons && Array.isArray(mplusResponse.seasons)) {
+          const currentSeason = mplusResponse.seasons.find(season => season.id === CURRENT_MPLUS_SEASON);
+          
+          if (currentSeason) {
+            try {
+              const currentSeasonUrl = mythicSeasonUrl(CURRENT_MPLUS_SEASON);
+              const currentSeasonData = await BnetApi.query(currentSeasonUrl);
+              dataToAppend.currentSeason = currentSeasonData;
+            } catch (error) {
+              console.error('Error fetching current season data:', error.message);
+              dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+            }
+          } else {
+            console.log(`Character ${characterName}-${server} does not have season ${CURRENT_MPLUS_SEASON} data`);
+            dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+          }
+        } else {
+          console.log(`Character ${characterName}-${server} has no seasons data`);
+          dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+        }
       } catch (error) {
         console.error('Error fetching mythic+ data:', error.message);
         dataToAppend.mplus = { current_mythic_rating: { rating: 0 } };
+        dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
       }
     }
 
@@ -296,6 +321,9 @@ router.get('/:realm/:character', async (req, res) => {
       if (dataToAppend.mplus) {
         dataToAppend.mplus.current_mythic_rating = { rating: 0 };
       }
+      if (dataToAppend.currentSeason) {
+        dataToAppend.currentSeason.current_mythic_rating = { rating: 0 };
+      }
       if (dataToAppend.pvp) {
         dataToAppend.pvp.rating = 0;
         dataToAppend.pvp.summary = { honor_level: 0 };
@@ -330,7 +358,7 @@ router.get('/:realm/:character', async (req, res) => {
       lockStatus,
       isActiveInSeason2: isActive,
       processedStats: {
-        mythicPlusScore: dataToAppend.mplus?.current_mythic_rating?.rating || 0,
+        mythicPlusScore: dataToAppend.currentSeason?.current_mythic_rating?.rating || dataToAppend.mplus?.current_mythic_rating?.rating || 0,
         pvpRating: dataToAppend.pvp?.rating || 0,
         itemLevel: dataToAppend.itemlevel.equiped,
         role: TANKS.includes(dataToAppend.metaData.spec) ? 'TANK' : 

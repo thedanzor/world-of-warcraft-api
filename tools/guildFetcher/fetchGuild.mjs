@@ -10,8 +10,15 @@ import {
   findMemberByName, 
   updateMember, 
   addMember,
-  logError
+  logError,
+  getAllMembers,
+  saveTopSeasonalStats
 } from '../../src/database.js';
+
+import { 
+  processGuildSeasonalStats,
+  getTopSeasonalAchievements
+} from './seasonalStats.mjs';
 
 
 // Import the config as a module instead of parsing as JSON
@@ -256,6 +263,59 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
         };
 
         await handleMember(trimmedList[index]);
+
+        // Process seasonal statistics if mplus data was fetched
+        if (dataTypes.includes('mplus')) {
+            emitProgress(io, processId, 'seasonal-stats', {
+                message: 'Processing seasonal statistics...'
+            });
+
+            try {
+                // Get all members with their current data
+                const allMembers = await getAllMembers();
+                
+                // Process guild-wide seasonal statistics
+                const guildSeasonalStats = processGuildSeasonalStats(allMembers);
+                
+                // Get top achievements
+                const achievements = getTopSeasonalAchievements(guildSeasonalStats);
+                
+                // Save to database
+                await saveTopSeasonalStats({
+                    ...guildSeasonalStats,
+                    achievements
+                });
+
+                emitProgress(io, processId, 'seasonal-stats', {
+                    message: 'Seasonal statistics processed successfully!',
+                    success: true,
+                    stats: {
+                        charactersWithMplus: guildSeasonalStats.charactersWithMplus,
+                        totalRuns: guildSeasonalStats.totalRuns,
+                        highestKey: guildSeasonalStats.highestKeyOverall,
+                        topPlayers: guildSeasonalStats.topPlayers.length
+                    }
+                });
+            } catch (seasonalError) {
+                await logError({
+                    type: 'guild-fetch',
+                    endpoint: 'seasonal-stats-processing',
+                    error: seasonalError,
+                    context: { 
+                        processId, 
+                        dataTypes,
+                        memberCount: updatedMemberNames.length
+                    },
+                    processId
+                });
+                
+                emitProgress(io, processId, 'error', {
+                    message: 'Error processing seasonal statistics',
+                    error: seasonalError.message
+                });
+                // Don't throw error, just log it and continue
+            }
+        }
 
         emitProgress(io, processId, 'complete', {
             message: 'Guild data update completed successfully!',
