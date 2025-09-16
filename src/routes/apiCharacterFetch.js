@@ -348,6 +348,7 @@ router.get('/:realm/:character', async (req, res) => {
     });
 
   } catch (error) {
+    const { realm, character } = req.params;
     await logError({
       type: 'api',
       endpoint: `/api/fetch/${realm}/${character}`,
@@ -418,6 +419,7 @@ router.get('/:realm/:character/transmog', async (req, res) => {
     });
 
   } catch (error) {
+    const { realm, character } = req.params;
     await logError({
       type: 'api',
       endpoint: `/api/fetch/${realm}/${character}/transmog`,
