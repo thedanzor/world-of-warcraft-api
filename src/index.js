@@ -17,6 +17,10 @@ import apiSeason3SignupRouter from './routes/apiSeason3Signup.js';
 import apiCharacterFetchRouter from './routes/apiCharacterFetch.js';
 import apiSeasonalStatsRouter from './routes/apiSeasonalStats.js';
 import errorsRouter from './routes/errors.js';
+import installRouter from './routes/install.js';
+import configRouter from './routes/config.js';
+import resetRouter from './routes/reset.js';
+import settingsRouter from './routes/settings.js';
 import { logError } from './database.js';
 import { startCron } from './cron.js';
 
@@ -40,6 +44,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Make io available to routes
+app.set('io', io);
+
 // Register routers
 app.use('/api/data', dataFilteredRouter);
 app.use('/api/data/filtered', dataFilteredRouter);
@@ -55,12 +62,22 @@ app.use('/api/season3/signup', apiSeason3SignupRouter);
 app.use('/api/fetch', apiCharacterFetchRouter);
 app.use('/api/seasonal-stats', apiSeasonalStatsRouter);
 app.use('/api/errors', errorsRouter);
+app.use('/api/install', installRouter);
+app.use('/api/config', configRouter);
+app.use('/api/reset', resetRouter);
+app.use('/api/settings', settingsRouter);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  console.log('🔌 Socket.IO: Client connected -', socket.id);
+  console.log('   Transport:', socket.conn.transport.name);
+  
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Socket.IO: Client disconnected -', socket.id, 'Reason:', reason);
+  });
+  
+  socket.on('error', (error) => {
+    console.error('⚠️  Socket.IO: Socket error -', socket.id, error);
   });
 });
 
@@ -99,12 +116,11 @@ app.use((req, res) => {
 });
 
 // Start the server and log the port
-server.listen(port, host, () => {
+server.listen(port, host, async () => {
     console.log(`Server is running on http://${host}:${port}`);
+    // Start the cron job for scheduled guild updates (only if AppSettings exists)
+    await startCron(io);
 });
-
-// Start the cron job for scheduled guild updates
-startCron(io);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

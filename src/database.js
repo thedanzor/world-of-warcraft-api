@@ -800,6 +800,150 @@ export async function hasTopSeasonalStats(season) {
   }
 }
 
+// ===== APP SETTINGS COLLECTION FUNCTIONS =====
+
+/**
+ * Get the MongoDB collection for app settings.
+ * @returns {Promise<Collection>} The app settings collection
+ */
+async function getAppSettingsCollection() {
+  const connection = await connectToDatabase();
+  if (!connection || !connection.db) {
+    throw new Error('Database connection failed');
+  }
+  return connection.db.collection('AppSettings');
+}
+
+/**
+ * Get the current app settings from MongoDB.
+ * @returns {Promise<Object|null>} App settings document or null if not found
+ */
+export async function getAppSettings() {
+  try {
+    const appSettingsCollection = await getAppSettingsCollection();
+    const settings = await appSettingsCollection.findOne({});
+    return settings;
+  } catch (error) {
+    console.error('❌ Failed to get app settings:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if app settings have been initialized.
+ * @returns {Promise<boolean>} True if app settings exist
+ */
+export async function hasAppSettings() {
+  try {
+    const appSettingsCollection = await getAppSettingsCollection();
+    const count = await appSettingsCollection.countDocuments({});
+    return count > 0;
+  } catch (error) {
+    console.error('❌ Failed to check app settings existence:', error);
+    return false;
+  }
+}
+
+/**
+ * Save or update app settings in MongoDB.
+ * @param {Object} settings - App settings data
+ * @returns {Promise<Object>} MongoDB upsert result
+ */
+export async function saveAppSettings(settings) {
+  try {
+    const appSettingsCollection = await getAppSettingsCollection();
+    
+    const document = {
+      ...settings,
+      lastUpdated: new Date(),
+      createdAt: settings.createdAt || new Date()
+    };
+    
+    const result = await appSettingsCollection.updateOne(
+      {},
+      { $set: document },
+      { upsert: true }
+    );
+    
+    console.log('✅ App settings saved to MongoDB');
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to save app settings:', error);
+    throw error;
+  }
+}
+
+// ===== ADMIN COLLECTION FUNCTIONS =====
+
+/**
+ * Get the MongoDB collection for admin users.
+ * @returns {Promise<Collection>} The admin collection
+ */
+async function getAdminCollection() {
+  const connection = await connectToDatabase();
+  if (!connection || !connection.db) {
+    throw new Error('Database connection failed');
+  }
+  return connection.db.collection('Admin');
+}
+
+/**
+ * Get admin user by username.
+ * @param {string} username - Admin username
+ * @returns {Promise<Object|null>} Admin document or null if not found
+ */
+export async function getAdminByUsername(username) {
+  try {
+    const adminCollection = await getAdminCollection();
+    const admin = await adminCollection.findOne({ username });
+    return admin;
+  } catch (error) {
+    console.error('❌ Failed to get admin by username:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new admin user.
+ * @param {string} username - Admin username
+ * @param {string} hashedPassword - Hashed password
+ * @returns {Promise<Object>} MongoDB insert result
+ */
+export async function createAdmin(username, hashedPassword) {
+  try {
+    const adminCollection = await getAdminCollection();
+    
+    const admin = {
+      username,
+      password: hashedPassword,
+      createdAt: new Date(),
+      lastLogin: null
+    };
+    
+    const result = await adminCollection.insertOne(admin);
+    console.log('✅ Admin user created');
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to create admin:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if any admin users exist.
+ * @returns {Promise<boolean>} True if at least one admin exists
+ */
+export async function hasAdmin() {
+  try {
+    const adminCollection = await getAdminCollection();
+    const count = await adminCollection.countDocuments({});
+    return count > 0;
+  } catch (error) {
+    console.error('❌ Failed to check admin existence:', error);
+    return false;
+  }
+}
+
 // Graceful shutdown handler for SIGTERM (kill signal)
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing database connection...');

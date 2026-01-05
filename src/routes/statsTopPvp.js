@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     if (!members.length) {
       return res.status(404).json({ success: false, error: 'No guild data available' });
     }
-    const transformedData = members.map(transformCharacterData);
+    const transformedData = await Promise.all(members.map(transformCharacterData));
     const sortedData = transformedData.sort((a, b) => b.itemLevel - a.itemLevel);
     const pvpPlayers = sortedData
       .filter(character => character.pvp > 0)

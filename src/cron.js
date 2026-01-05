@@ -1,27 +1,35 @@
 import cron from 'node-cron';
 import { startGuildUpdate } from './services/guildUpdater.js';
+import { hasAppSettings } from './database.js';
 
 console.log('🔧 Cron script loaded successfully');
 
 const cronSchedule = '*/30 * * * *'; // Every 30 minutes
 
-export function startCron(io) {
-  // Run guild update immediately on startup
-  console.log('🚀 Running initial guild update on startup...');
-  startGuildUpdate(['raid', 'mplus', 'pvp'], io)
-    .then(result => {
-      if (result.success) {
-        console.log('✅ Initial guild update completed successfully');
-        console.log('📊 Process ID:', result.processId);
-        console.log('🎯 Data types:', result.dataTypes);
-      } else {
-        console.log('❌ Initial guild update failed:', result.error);
-        console.log('💬 Message:', result.message);
-      }
-    })
-    .catch(error => {
-      console.error('💥 Initial guild update crashed:', error);
-    });
+export async function startCron(io) {
+  // Check if AppSettings exists before starting cron
+  const appSettingsExist = await hasAppSettings();
+  if (!appSettingsExist) {
+    console.log('⚠️ App settings not initialized. Cron jobs will not start until installation is complete.');
+    return;
+  }
+  
+  // // Run guild update immediately on startup
+  // console.log('🚀 Running initial guild update on startup...');
+  // startGuildUpdate(['raid', 'mplus', 'pvp'], io)
+  //   .then(result => {
+  //     if (result.success) {
+  //       console.log('✅ Initial guild update completed successfully');
+  //       console.log('📊 Process ID:', result.processId);
+  //       console.log('🎯 Data types:', result.dataTypes);
+  //     } else {
+  //       console.log('❌ Initial guild update failed:', result.error);
+  //       console.log('💬 Message:', result.message);
+  //     }
+  //   })
+  //   .catch(error => {
+  //     console.error('💥 Initial guild update crashed:', error);
+  //   });
 
   // Schedule regular updates every 30 minutes
   cron.schedule(cronSchedule, async () => {

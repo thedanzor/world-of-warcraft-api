@@ -1,18 +1,29 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const data = {
-    // The following values are loaded from environment variables for your safety
-    "API_BATTLENET_KEY": process.env.API_BATTLENET_KEY,
-    "API_BATTLENET_SECRET": process.env.API_BATTLENET_SECRET,
-    "GUILD_NAME": process.env.GUILD_NAME,
-    "GUILD_REALM": process.env.GUILD_REALM,
-    "REGION": process.env.REGION,
-    "API_PARAM_REQUIREMENTGS": process.env.API_PARAM_REQUIREMENTGS,
+/**
+ * MINIMAL FALLBACK CONFIGURATION
+ * 
+ * This file provides only basic fallback values if the database is unavailable.
+ * The frontend app.config.js contains the rich default configuration that gets
+ * sent to the backend during the installation process and saved to the database.
+ * 
+ * The database (AppSettings collection) is the primary source of configuration.
+ * This file is only used as an emergency fallback.
+ */
 
-    // Change the below settings that are specific to your guild and needs
+const data = {
+    // Environment variables (legacy .env file support)
+    "API_BATTLENET_KEY": process.env.API_BATTLENET_KEY || null,
+    "API_BATTLENET_SECRET": process.env.API_BATTLENET_SECRET || null,
+    "GUILD_NAME": process.env.GUILD_NAME || null,
+    "GUILD_REALM": process.env.GUILD_REALM || null,
+    "REGION": process.env.REGION || "eu",
+    "API_PARAM_REQUIREMENTGS": process.env.API_PARAM_REQUIREMENTGS || "namespace=profile-eu&locale=en_US",
+
+    // Minimal fallback values (real values come from database after installation)
     "LEVEL_REQUIREMENT": 80,
-    "GUILD_RANK_REQUIREMENT": [0,1,2,3,4,5,6, 7,8,9,10],
+    "GUILD_RANK_REQUIREMENT": [0,1,2,3,4,5,6,7,8,9,10],
     "ITEM_LEVEL_REQUIREMENT": 440,
     "MIN_CHECK_CAP": 640,
     "MAX_CHECK_CAP": 720,
@@ -23,37 +34,11 @@ const data = {
     "TANKS": ["Blood", "Vengeance", "Guardian", "Brewmaster", "Protection"],
     "HEALERS": ["Preservation", "Mistweaver", "Holy", "Discipline", "Restoration"],
     "DIFFICULTY": ["Mythic", "Heroic", "Normal"],
-    "_DRAFT_DIFFICULTY": ["LFR", "Raid Finder", "Mythic", "Heroic", "Normal"],
     "SEASON_START_DATE": "2025-08-01",
-    "CURRENT_RAID": "Manaforge Omega",
+    "CURRENT_RAID": "Unknown Raid",
     "CURRENT_MPLUS_SEASON": 15,
-    "GUILLD_RANKS": [
-        "Guild Lead",
-        "Officer",
-        "Officer Alt",
-        "Cunt",
-        "Muppet",
-        "Raider",
-        "Trial Raider",
-        "Member",
-        "Alt",
-        "New Recruit"
-    ],
-    "CURRENT_SEASON_TIER_SETS": [
-        "Hollow Sentinel's Wake ",
-        "Charhound's Vicious Hunt",
-        "Ornaments of the Mother Eagle",
-        "Spellweaver's Immaculate Design",
-        "Midnight Herald's Pledge",
-        "Augur's Ephemeral Plumage ",
-        "Crash of Fallen Storms",
-        "Vows of the Lucent Battalion",
-        "Eulogy to a Dying Star ",
-        "Shroud of the Sudden Eclipse",
-        "Howls of Channeled Fury ",
-        "Inquisitor's Feast of Madness",
-        "Chains of the Living Weapon"
-    ]
+    "GUILLD_RANKS": [],
+    "CURRENT_SEASON_TIER_SETS": []
 }
 
 export default data;

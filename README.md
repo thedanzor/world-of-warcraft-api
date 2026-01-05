@@ -3,7 +3,58 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
-## Version 1.5.0 Changelog 🆕
+## Version 2.0 Changelog 🆕
+
+### Major Features
+- **Guided Installation System**: Complete installation wizard with step-by-step configuration
+- **Admin Authentication System**: Secure admin authentication for protected routes
+- **Database-Based Configuration**: App settings stored in MongoDB instead of environment variables
+- **Settings Management API**: Admin-only endpoints for viewing and updating app settings
+- **Database Reset Functionality**: Ability to reset database collections while preserving critical settings
+- **Protected Fields**: Guild name, realm, and API credentials protected from modification
+
+### New Endpoints
+- **GET `/api/install`** - Check installation status and get default configuration
+- **POST `/api/install`** - Save app settings with Battle.net API validation
+- **POST `/api/install/login`** - Admin authentication for protected routes
+- **POST `/api/install/admin`** - Create admin account with password strength validation
+- **GET `/api/settings`** - Get app settings (admin only, includes sensitive data)
+- **PUT `/api/settings`** - Update app settings (admin only, protected fields excluded)
+- **POST `/api/reset`** - Reset database collections (admin only)
+- **GET `/api/reset/info`** - Get information about what will be reset
+
+### Configuration Changes
+- **Database Storage**: App settings now stored in MongoDB `AppSettings` collection
+- **Environment Variables**: Reduced reliance on environment variables for configuration
+- **app.config.js**: Now serves as fallback/default values source
+- **Protected Fields**: Guild name, realm, and API credentials cannot be changed after initial setup
+- **Runtime Configuration**: Settings loaded from database at runtime with fallback to app.config.js
+
+### Installation Process
+- **Step-by-Step Wizard**: Guided installation through frontend interface
+- **API Validation**: Real-time Battle.net API credential validation
+- **Guild Verification**: Automatic verification of guild name and realm
+- **Admin Account Creation**: Secure admin account setup with password requirements
+- **Installation Status Tracking**: Track installation progress and completion
+
+### Security Enhancements
+- **Admin Authentication**: Basic Auth for protected endpoints
+- **Password Hashing**: bcrypt password hashing for admin accounts
+- **Security Logging**: Failed authentication attempts logged
+- **Field Protection**: Server-side protection of critical configuration fields
+- **Session Management**: Client-side session storage for authentication state
+
+### Database Collections
+- **AppSettings Collection**: Stores all application configuration
+- **Admin Collection**: Stores admin user accounts with hashed passwords
+- **Reset Functionality**: Preserves AppSettings and Admin collections during reset
+
+### Migration from v1.5.0
+- **No Breaking Changes**: All existing endpoints remain functional
+- **Optional Migration**: Can continue using environment variables, but database storage is recommended
+- **Gradual Adoption**: Installation wizard can be used to migrate existing configurations
+
+## Version 1.5.0 Changelog
 
 ### New Features
 - **Comprehensive Seasonal Statistics System**: Complete Mythic+ seasonal data processing and analysis
@@ -113,23 +164,52 @@ See [LICENSE](https://creativecommons.org/licenses/by-nc-nd/4.0/) for full detai
 
 ### Setting Up for Different Environments
 
-#### Local Development
-1. Install [Node.js 20+](https://nodejs.org/en/download/).
-2. Install [MongoDB Community Edition](https://www.mongodb.com/try/download/community) and ensure it is running locally, or set up a free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster.
-3. Clone this repository and run:
+#### Local Development (v2.0+)
+
+1. **Install Prerequisites**
+   - Install [Node.js 20+](https://nodejs.org/en/download/)
+   - Install [MongoDB Community Edition](https://www.mongodb.com/try/download/community) or set up [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+
+2. **Clone and Install**
    ```bash
+   git clone <repository-url>
+   cd world-of-warcraft-api
    yarn install
    # or
    npm install
    ```
-4. Create a `.env` file in the project root (see the example in this README).
-5. Start the server:
+
+3. **Configure Environment**
+   - Create a `.env` file in the project root
+   - Set MongoDB connection and collection names:
+     ```bash
+     MONGODB=mongodb://localhost:27017
+     DATABASE_NAME=warcraft_guild
+     SIGNUP_COLLECTION=season3_signup
+     MEMBERS_COLLECTION_NAME=members
+     ERRORS_COLLECTION_NAME=error_logs
+     TOP_SEASONAL_COLLECTION_NAME=topSeasonal
+     PORT=8000
+     HOST=localhost  # Use 'localhost' for local development
+     ```
+
+4. **Start the Server**
    ```bash
    yarn dev
    # or
-   npm dev
+   npm run dev
    ```
-6. For local developement change the host to 'localhost' instead of '0.0.0.0'
+
+5. **Run Installation Wizard**
+   - Start your frontend application
+   - Navigate to `/install` page
+   - Follow the guided installation process:
+     - Configure Battle.net API credentials
+     - Set guild information
+     - Fetch guild data
+     - Create admin account
+
+**Note**: In v2.0+, you can configure most settings through the installation wizard. Environment variables for API credentials are optional and serve as fallback values.
 
 #### Production Deployment
 - Use a process manager like [PM2](https://pm2.keymetrics.io/) for running in production.
@@ -156,40 +236,64 @@ See [LICENSE](https://creativecommons.org/licenses/by-nc-nd/4.0/) for full detai
 
 Create a `.env` file in your project root with the following keys:
 
-```
-MONGODB=mongodb://
-DATABASE_NAME=xxxxx
-SIGNUP_COLLECTION=xxxxx
-MEMBERS_COLLECTION_NAME=xxxxx
-ERRORS_COLLECTION_NAME=xxxxx
-TOP_SEASONAL_COLLECTION_NAME=xxxxx
+### Required Variables
 
+```
+# MongoDB Configuration
+MONGODB=mongodb://localhost:27017
+DATABASE_NAME=warcraft_guild
+SIGNUP_COLLECTION=season3_signup
+MEMBERS_COLLECTION_NAME=members
+ERRORS_COLLECTION_NAME=error_logs
+TOP_SEASONAL_COLLECTION_NAME=topSeasonal
+
+# Server Configuration
 PORT=8000
 HOST=0.0.0.0
+```
 
+### Optional Variables (v2.0+)
+
+Starting with version 2.0, most application configuration is managed through the database via the installation wizard. The following environment variables are **optional** and serve as fallback values:
+
+```
+# Battle.net API (Optional - can be set via installation wizard)
 API_BATTLENET_KEY=xxxxx
 API_BATTLENET_SECRET=xxxxx
 GUILD_NAME=xxxxx
 GUILD_REALM=xxxxx
-REGION=xxxxx
-API_PARAM_REQUIREMENTGS=xxxxx
+REGION=eu
+API_PARAM_REQUIREMENTGS=namespace=profile-eu&locale=en_US
 ```
 
-## Configuration File: `app.config.js`
+**Note**: In v2.0+, these values can be configured through the `/install` page and will be stored in the database. Environment variables are only used as fallback if database settings don't exist.
 
-This is the application config file, this allows you to specify specifics for your guild, such as name, realm, item level, rank named and more.
+## Configuration: Database-Based (v2.0+)
+
+Starting with version 2.0, application configuration is primarily managed through the database via the installation wizard. The `app.config.js` file serves as a fallback and default values source.
+
+### Configuration Flow
+
+1. **Initial Setup**: Use the frontend `/install` page to configure all settings
+2. **Database Storage**: Settings are saved to MongoDB `AppSettings` collection
+3. **Runtime Loading**: Application loads settings from database at runtime
+4. **Fallback**: If database settings don't exist, falls back to `app.config.js` defaults
+
+### Configuration File: `app.config.js` (Fallback/Defaults)
+
+This file provides default values and fallback configuration. In v2.0+, it's primarily used when database settings don't exist.
 
 ```js
 const data = {
-  // The following values are loaded from environment variables for your safety
-  API_BATTLENET_KEY: process.env.API_BATTLENET_KEY,
-  API_BATTLENET_SECRET: process.env.API_BATTLENET_SECRET,
-  GUILD_NAME: process.env.GUILD_NAME,
-  GUILD_REALM: process.env.GUILD_REALM,
-  REGION: process.env.REGION,
-  API_PARAM_REQUIREMENTGS: process.env.API_PARAM_REQUIREMENTGS,
+  // The following values can be loaded from environment variables or set via installation wizard
+  API_BATTLENET_KEY: process.env.API_BATTLENET_KEY || '',
+  API_BATTLENET_SECRET: process.env.API_BATTLENET_SECRET || '',
+  GUILD_NAME: process.env.GUILD_NAME || '',
+  GUILD_REALM: process.env.GUILD_REALM || '',
+  REGION: process.env.REGION || 'eu',
+  API_PARAM_REQUIREMENTGS: process.env.API_PARAM_REQUIREMENTGS || 'namespace=profile-eu&locale=en_US',
 
-  // Change the below settings that are specific to your guild and needs
+  // Default settings that can be customized via installation wizard or settings page
   LEVEL_REQUIREMENT: 80,
   GUILD_RANK_REQUIREMENT: [0,1,2,3,4,5,6,7,8,9,10],
   ITEM_LEVEL_REQUIREMENT: 440,
@@ -202,13 +306,10 @@ const data = {
   TANKS: ["Blood", "Vengeance", "Guardian", "Brewmaster", "Protection"],
   HEALERS: ["Preservation", "Mistweaver", "Holy", "Discipline", "Restoration"],
   DIFFICULTY: ["Mythic", "Heroic", "Normal"],
-  _DRAFT_DIFFICULTY: ["LFR", "Raid Finder", "Mythic", "Heroic", "Normal"],
   GUILLD_RANKS: [
     "Guild Lead",
     "Officer",
     "Officer Alt",
-    "Cunt",
-    "Muppet",
     "Raider",
     "Trial Raider",
     "Member",
@@ -234,6 +335,12 @@ const data = {
 
 export default data;
 ```
+
+### Updating Configuration
+
+- **Most Settings**: Update via `/settings` API endpoint (admin only)
+- **Protected Settings**: Guild Name, Realm, API Key can only be changed via `/install` endpoint with overwrite flag
+- **Database Reset**: Use `/api/reset` endpoint to reset all data while preserving AppSettings
 
 ## API Endpoints
 
@@ -675,6 +782,106 @@ Checks seasonal statistics availability and status.
 }
 ```
 
+## Installation & Settings API 🆕 **NEW v2.0**
+
+### GET `/api/install`
+Returns installation status and default configuration values.
+
+**Response:**
+```json
+{
+  "success": true,
+  "installed": false,
+  "hasAdmin": false,
+  "hasGuildData": false,
+  "suggestedStep": 0,
+  "defaults": {
+    "LEVEL_REQUIREMENT": 80,
+    "ITEM_LEVEL_REQUIREMENT": 440
+  }
+}
+```
+
+### POST `/api/install`
+Saves app settings with Battle.net API validation.
+
+**Request Body:**
+```json
+{
+  "API_BATTLENET_KEY": "your-client-id",
+  "API_BATTLENET_SECRET": "your-client-secret",
+  "GUILD_NAME": "guild-name-slug",
+  "GUILD_REALM": "realm-slug",
+  "REGION": "eu",
+  "API_PARAM_REQUIREMENTGS": "namespace=profile-eu&locale=en_US",
+  "overwrite": false
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "App settings saved successfully",
+  "validation": {
+    "isValid": true,
+    "guildMembers": 150
+  }
+}
+```
+
+### POST `/api/install/login`
+Authenticates admin user for protected routes.
+
+**Request Body:**
+```json
+{
+  "username": "admin",
+  "password": "secure-password"
+}
+```
+
+### POST `/api/install/admin`
+Creates admin account with password strength validation.
+
+**Request Body:**
+```json
+{
+  "username": "admin",
+  "password": "SecurePassword123!"
+}
+```
+
+### GET `/api/settings`
+Returns app settings (admin only, Basic Auth required).
+
+**Headers:**
+```
+Authorization: Basic base64(username:password)
+```
+
+### PUT `/api/settings`
+Updates app settings (admin only, protected fields excluded).
+
+**Headers:**
+```
+Authorization: Basic base64(username:password)
+```
+
+### POST `/api/reset`
+Resets database collections (admin only, preserves AppSettings).
+
+**Request Body:**
+```json
+{
+  "username": "admin",
+  "password": "secure-password"
+}
+```
+
+### GET `/api/reset/info`
+Returns information about what will be reset.
+
 ### GET `/api/season3/data`
 Returns all Season 3 signups.
 
@@ -868,6 +1075,105 @@ Deletes multiple error logs with optional filtering.
   }
 }
 ```
+
+## Installation Guide (v2.0+)
+
+### Quick Start
+
+1. **Set up MongoDB**
+   - Ensure MongoDB is running and accessible
+   - Create a database (or use existing)
+   - Update `.env` with your MongoDB connection string
+
+2. **Start the API Server**
+   ```bash
+   yarn install
+   yarn dev
+   # or
+   npm install
+   npm run dev
+   ```
+
+3. **Run Installation Wizard**
+   - Navigate to your frontend application
+   - Go to `/install` page
+   - Follow the guided installation process:
+     
+     **Step 1: App Settings**
+     - Enter Battle.net API credentials
+     - Configure guild name and realm
+     - Set region and API parameters
+     - Configure guild requirements
+     - Settings are validated against Battle.net API
+     
+     **Step 2: Fetch Guild Data**
+     - Automatically fetches all guild member data
+     - Real-time progress updates via WebSocket
+     - Can be skipped and run later
+     
+     **Step 3: Create Admin Account**
+     - Create admin username and password
+     - Password must meet strength requirements
+     - After creation, installation is complete
+
+4. **Access Settings**
+   - Navigate to `/settings` in frontend (requires admin login)
+   - View and update app configuration
+   - Reset database if needed
+
+### Manual Configuration (Legacy)
+
+If you prefer to configure via environment variables (v1.x style):
+
+1. Set all required environment variables in `.env`
+2. Settings will be loaded from environment variables
+3. Can later migrate to database storage via installation wizard
+
+## Migration Guide: v1.5.0 → v2.0
+
+### New Features (No Breaking Changes)
+
+#### Installation System
+- **New Installation Endpoints**: `/api/install` endpoints for guided setup
+- **Database Configuration**: Settings now stored in MongoDB
+- **Admin Authentication**: Secure admin account system
+
+#### Settings Management
+- **Settings API**: New `/api/settings` endpoints for configuration management
+- **Protected Fields**: Guild name, realm, and API credentials protected
+- **Runtime Updates**: Update settings without restarting server
+
+#### Database Reset
+- **Reset Endpoint**: `/api/reset` for database cleanup
+- **Selective Reset**: Preserves AppSettings and Admin collections
+
+### Migration Steps
+
+1. **Update Dependencies**
+   ```bash
+   yarn install
+   # or
+   npm install
+   ```
+
+2. **Optional: Migrate to Database Configuration**
+   - Use the installation wizard to migrate existing settings
+   - Or continue using environment variables (still supported)
+
+3. **Create Admin Account**
+   - Use `/install` page to create admin account
+   - Or use `POST /api/install/admin` endpoint directly
+
+4. **Update Frontend**
+   - Ensure frontend is updated to v2.0+
+   - New installation wizard will guide you through setup
+
+### Backward Compatibility
+
+- **All existing endpoints remain functional**
+- **Environment variables still supported as fallback**
+- **No data migration required**
+- **Can continue using existing configuration methods**
 
 ## Migration Guide: v1.4 → v1.5.0
 

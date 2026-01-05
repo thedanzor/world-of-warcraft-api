@@ -12,25 +12,7 @@ import {
   isTierItem
 } from '../../tools/guildFetcher/utils.mjs';
 import { logError } from '../database.js';
-
-import config from '../../app.config.js';
-
-const {
-  API_PARAM_REQUIREMENTGS,
-  GUILD_NAME,
-  GUILD_REALM,
-  LEVEL_REQUIREMENT,
-  ITEM_LEVEL_REQUIREMENT,
-  API_BATTLENET_KEY,
-  API_BATTLENET_SECRET,
-  REGION,
-  TANKS,
-  HEALERS,
-  ENCHANTABLE_PIECES,
-  SEASON_START_DATE,
-  CURRENT_RAID,
-  CURRENT_MPLUS_SEASON
-} = config;
+import { getConfig } from '../config.js';
 
 /**
  * GET /api/fetch/:realm/:character - Fetches fresh data for a specific character from WoW API.
@@ -44,10 +26,11 @@ const router = express.Router();
 /**
  * Checks if a character has been active since Season 2 started
  * @param {Object} character Character data object
+ * @param {string} seasonStartDate Season start date from config
  * @returns {boolean} True if character is active in Season 2
  */
-function isActiveInSeason2(character) {
-  const season2Start = new Date(SEASON_START_DATE).getTime();
+function isActiveInSeason2(character, seasonStartDate) {
+  const season2Start = new Date(seasonStartDate).getTime();
   const lastModified = new Date(character.metaData.lastUpdated).getTime();
   return lastModified >= season2Start;
 }
@@ -55,9 +38,10 @@ function isActiveInSeason2(character) {
 /**
  * Checks raid lockout status for a character
  * @param {Object} raidData Character's raid data
+ * @param {string} currentRaidName Current raid name from config
  * @returns {Object} Lockout status for each difficulty
  */
-function checkRaidLockouts(raidData) {
+function checkRaidLockouts(raidData, currentRaidName) {
   const lockouts = {
     isLocked: false,
     lockedTo: {}
@@ -75,7 +59,7 @@ function checkRaidLockouts(raidData) {
   }
 
   const currentRaid = raidData.instances.find(instance => 
-    instance.instance?.name === CURRENT_RAID
+    instance.instance?.name === currentRaidName
   );
 
   if (!currentRaid) {
@@ -114,6 +98,25 @@ function checkRaidLockouts(raidData) {
 
 router.get('/:realm/:character', async (req, res) => {
   try {
+    // Load config from database
+    const config = await getConfig();
+    const {
+      API_PARAM_REQUIREMENTGS,
+      GUILD_NAME,
+      GUILD_REALM,
+      LEVEL_REQUIREMENT,
+      ITEM_LEVEL_REQUIREMENT,
+      API_BATTLENET_KEY,
+      API_BATTLENET_SECRET,
+      REGION,
+      TANKS = [],
+      HEALERS = [],
+      ENCHANTABLE_PIECES = [],
+      SEASON_START_DATE,
+      CURRENT_RAID,
+      CURRENT_MPLUS_SEASON
+    } = config || {};
+
     const { realm, character } = req.params;
     const { dataTypes = 'raid,mplus,pvp' } = req.query;
     
@@ -314,7 +317,7 @@ router.get('/:realm/:character', async (req, res) => {
 
 
     // Check Season 2 activity
-    const isActive = isActiveInSeason2(dataToAppend);
+    const isActive = isActiveInSeason2(dataToAppend, SEASON_START_DATE);
     
     // Reset inactive character stats
     if (!isActive) {
@@ -347,7 +350,7 @@ router.get('/:realm/:character', async (req, res) => {
 
     // Check raid lockouts
     const lockStatus = requestedDataTypes.includes('raid') ? 
-      checkRaidLockouts(dataToAppend.raidHistory) : 
+      checkRaidLockouts(dataToAppend.raidHistory, CURRENT_RAID) : 
       null;
 
     const characterData = { 

@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     if (!members.length) {
       return res.status(404).json({ success: false, error: 'No guild data available' });
     }
-    const transformedData = members.map(transformCharacterData);
+    const transformedData = await Promise.all(members.map(transformCharacterData));
     const charactersWithMissingEnchants = transformedData.filter(character => character.missingEnchants && character.missingEnchants.length > 0);
     // Count by rank category using guildRank string converted to index
     // (Assume MAIN_RANKS, ALT_RANKS, GUILLD_RANKS are imported or passed in)

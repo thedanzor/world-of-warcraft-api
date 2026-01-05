@@ -1,14 +1,34 @@
-import config from '../app.config.js';
+import { getConfig } from './config.js';
 
-const { TANKS, HEALERS, GUILLD_RANKS, MAIN_RANKS, ALT_RANKS, MIN_TIER_ITEMLEVEL } = config;
-const CURRENT_SEASON_TIER_SETS = config.CURRENT_SEASON_TIER_SETS;
+// Cache config at module level
+let cachedConfig = null;
+
+/**
+ * Get cached config or load it
+ * @returns {Promise<Object>} Config object
+ */
+async function getCachedConfig() {
+  if (!cachedConfig) {
+    cachedConfig = await getConfig();
+  }
+  return cachedConfig;
+}
 
 /**
  * Transforms a character object into a standardized format for the API.
  * @param {Object} character - The raw character data.
- * @returns {Object} The transformed character data.
+ * @param {Object} config - Optional config object. If not provided, will be loaded.
+ * @returns {Promise<Object>} The transformed character data.
  */
-function transformCharacterData(character) {
+async function transformCharacterData(character, config = null) {
+  const cfg = config || await getCachedConfig();
+  const { 
+    TANKS = [], 
+    HEALERS = [], 
+    MIN_TIER_ITEMLEVEL = 640, 
+    CURRENT_SEASON_TIER_SETS = [] 
+  } = cfg || {};
+
   const missingEnchants = character.equipement
     ?.filter(item => item.needsEnchant && !item.hasEnchant)
     ?.map(item => item.type) || [];
@@ -82,9 +102,18 @@ function transformCharacterData(character) {
  * Applies filters to a list of character data.
  * @param {Array} data - The array of character objects.
  * @param {Object} filters - The filters to apply.
- * @returns {Array} The filtered character data.
+ * @param {Object} config - Optional config object. If not provided, will be loaded.
+ * @returns {Promise<Array>} The filtered character data.
  */
-function applyFilters(data, filters) {
+async function applyFilters(data, filters, config = null) {
+  const cfg = config || await getCachedConfig();
+  const { 
+    TANKS = [], 
+    HEALERS = [], 
+    MAIN_RANKS = [], 
+    ALT_RANKS = [] 
+  } = cfg || {};
+
   const {
     search = '',
     rankFilter = 'all',
@@ -201,9 +230,13 @@ function applyFilters(data, filters) {
 /**
  * Calculates statistics from character data.
  * @param {Array} data - The array of character objects.
- * @returns {Object} The calculated statistics.
+ * @param {Object} config - Optional config object. If not provided, will be loaded.
+ * @returns {Promise<Object>} The calculated statistics.
  */
-function calculateStatistics(data) {
+async function calculateStatistics(data, config = null) {
+  const cfg = config || await getCachedConfig();
+  const { TANKS = [], HEALERS = [] } = cfg || {};
+
   const sortedData = [...data].sort((a, b) => b.itemLevel - a.itemLevel);
   const totalMembers = sortedData.length;
   const missingEnchants = sortedData.filter(char => char.missingEnchants.length > 0).length;

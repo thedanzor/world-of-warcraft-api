@@ -20,22 +20,8 @@ import {
   getTopSeasonalAchievements
 } from './seasonalStats.mjs';
 
-
-// Import the config as a module instead of parsing as JSON
-const config = await import('../../app.config.js');
-
-const {
-    API_PARAM_REQUIREMENTGS,
-    GUILD_NAME,
-    GUILD_REALM,
-    LEVEL_REQUIREMENT,
-    API_BATTLENET_KEY,
-    API_BATTLENET_SECRET,
-    REGION
-} = config.default;  // Use .default since we're importing as a module
-
-// Business logic specific variables
-const GUILD_URL = `/data/wow/guild/${GUILD_REALM}/${GUILD_NAME}/roster?${API_PARAM_REQUIREMENTGS}`
+// Import config utility to get settings from database
+import { getConfig } from '../../src/config.js';
 
 // Display disclaimer
 console.log(gradient.pastel.multiline(figlet.textSync('Audit Tool', {
@@ -52,19 +38,23 @@ console.log(gradient.morning('Copyright 2024 all rights reserved\n'));
  * @param {Object} data - Update data
  */
 function emitProgress(io, processId, type, data) {
+  // Add CLI logging first
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [${type.toUpperCase()}] ${data.message || JSON.stringify(data)}`);
+  
   // Only emit WebSocket events if io is provided
   if (io) {
-    io.emit('guild-update-progress', {
+    const payload = {
       processId,
       type,
       data,
-      timestamp: new Date().toISOString()
-    });
+      timestamp
+    };
+    console.log('📡 Emitting Socket.IO event:', type, 'to', io.engine.clientsCount, 'clients');
+    io.emit('guild-update-progress', payload);
+  } else {
+    console.warn('⚠️  Socket.IO instance not available, skipping event emission');
   }
-  
-  // Add CLI logging
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${type.toUpperCase()}] ${data.message || JSON.stringify(data)}`);
 }
 
 
@@ -79,6 +69,21 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
     const updatedMemberNames = []; // Track which members were updated
     
     try {
+        // Load config from database (or fallback to app.config.js)
+        const config = await getConfig();
+        const {
+            API_PARAM_REQUIREMENTGS,
+            GUILD_NAME,
+            GUILD_REALM,
+            LEVEL_REQUIREMENT,
+            API_BATTLENET_KEY,
+            API_BATTLENET_SECRET,
+            REGION
+        } = config;
+
+        // Business logic specific variables
+        const GUILD_URL = `/data/wow/guild/${GUILD_REALM}/${GUILD_NAME}/roster?${API_PARAM_REQUIREMENTGS}`;
+
         // Emit start event
         emitProgress(io, processId, 'start', {
             message: 'Starting guild data update',
@@ -165,6 +170,7 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
 
             try {
                 // Use the character fetch endpoint to get fresh data
+                // This endpoint uses getConfig() internally, so it will use database settings
                 const host = process.env.HOST || 'localhost';
                 const port = process.env.PORT || 8000;
                 const fetchUrl = `http://${host}:${port}/api/fetch/${server}/${characterName}?dataTypes=${dataTypes.join(',')}`;
@@ -184,7 +190,7 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                             character: `${characterName}-${server}`,
                             fetchUrl,
                             responseStatus: response.status,
-                            responseText: await response.text()
+                            responseBody: JSON.stringify(result)
                         },
                         processId,
                         character: `${characterName}-${server}`
@@ -236,6 +242,7 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                     console.log(`⚠️ Character ${characterName}-${server} not found or failed to fetch`);
                 }
             } catch (error) {
+                // Log error but don't throw - continue processing other characters
                 await logError({
                     type: 'guild-fetch',
                     endpoint: 'character-processing',
@@ -243,13 +250,16 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                     context: { 
                         processId, 
                         character: `${characterName}-${server}`,
-                        dataTypes
+                        dataTypes,
+                        note: 'Individual character processing error, continuing with other characters'
                     },
                     processId,
                     character: `${characterName}-${server}`
                 });
                 
-                emitProgress(io, processId, 'error', {
+                // Emit a warning event (not error) to continue processing
+                emitProgress(io, processId, 'character-warning', {
+                    character: `${characterName}-${server}`,
                     message: `Error processing ${characterName}-${server}: ${error.message}`,
                     character: `${characterName}-${server}`
                 });
