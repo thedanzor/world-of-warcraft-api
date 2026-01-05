@@ -944,6 +944,79 @@ export async function hasAdmin() {
   }
 }
 
+// ===== JOIN TEXT COLLECTION FUNCTIONS =====
+
+/**
+ * Get the MongoDB collection for join text.
+ * @returns {Promise<Collection>} The join text collection
+ */
+async function getJoinTextCollection() {
+  const connection = await connectToDatabase();
+  if (!connection || !connection.db) {
+    throw new Error('Database connection failed');
+  }
+  return connection.db.collection('jointext');
+}
+
+/**
+ * Get the current join text from MongoDB.
+ * @returns {Promise<Object|null>} Join text document or null if not found
+ */
+export async function getJoinText() {
+  try {
+    const joinTextCollection = await getJoinTextCollection();
+    const joinText = await joinTextCollection.findOne({});
+    return joinText;
+  } catch (error) {
+    console.error('❌ Failed to get join text:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if join text has been initialized.
+ * @returns {Promise<boolean>} True if join text exists
+ */
+export async function hasJoinText() {
+  try {
+    const joinTextCollection = await getJoinTextCollection();
+    const count = await joinTextCollection.countDocuments({});
+    return count > 0;
+  } catch (error) {
+    console.error('❌ Failed to check join text existence:', error);
+    return false;
+  }
+}
+
+/**
+ * Save or update join text in MongoDB.
+ * @param {Object} joinText - Join text data
+ * @returns {Promise<Object>} MongoDB upsert result
+ */
+export async function saveJoinText(joinText) {
+  try {
+    const joinTextCollection = await getJoinTextCollection();
+    
+    const document = {
+      ...joinText,
+      lastUpdated: new Date(),
+      createdAt: joinText.createdAt || new Date()
+    };
+    
+    const result = await joinTextCollection.updateOne(
+      {},
+      { $set: document },
+      { upsert: true }
+    );
+    
+    console.log('✅ Join text saved to MongoDB');
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to save join text:', error);
+    throw error;
+  }
+}
+
 // Graceful shutdown handler for SIGTERM (kill signal)
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing database connection...');

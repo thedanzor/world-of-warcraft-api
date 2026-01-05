@@ -12,12 +12,15 @@ import {
   hasAdmin,
   createAdmin,
   hasGuildData,
-  getAdminByUsername
+  getAdminByUsername,
+  saveJoinText,
+  hasJoinText
 } from '../database.js';
 import { logError } from '../database.js';
 import { clearConfigCache, getConfig } from '../config.js';
 import bcrypt from 'bcrypt';
 import config from '../../app.config.js';
+import { getDefaultJoinText } from './jointext.js';
 
 const router = express.Router();
 
@@ -318,6 +321,14 @@ router.post('/', async (req, res) => {
     // Save to database
     await saveAppSettings(settings);
     
+    // Seed join text if it doesn't exist
+    const joinTextExists = await hasJoinText();
+    if (!joinTextExists) {
+      const defaultJoinText = getDefaultJoinText();
+      await saveJoinText(defaultJoinText);
+      console.log('✅ Seeded default join text');
+    }
+    
     // Clear config cache so new settings are loaded
     clearConfigCache();
     
@@ -500,6 +511,7 @@ router.post('/admin', async (req, res) => {
     });
   }
 });
+
 
 export default router;
 
