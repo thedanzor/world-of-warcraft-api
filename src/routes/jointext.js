@@ -100,21 +100,27 @@ router.get('/', async (req, res) => {
   try {
     const joinText = await getJoinText();
     
+    console.log('🔍 GET /api/jointext - Retrieved from DB:', joinText ? 'Found' : 'Not found');
+    
     if (!joinText) {
       // Return default content if not found
+      const defaultText = getDefaultJoinText();
+      console.log('📦 Returning default join text with', defaultText.sections?.length || 0, 'sections');
       return res.json({
         success: true,
-        joinText: getDefaultJoinText()
+        joinText: defaultText
       });
     }
 
     const { _id, ...joinTextWithoutId } = joinText;
+    console.log('📤 Returning join text from DB with', joinTextWithoutId.sections?.length || 0, 'sections');
     
     res.json({
       success: true,
       joinText: joinTextWithoutId
     });
   } catch (error) {
+    console.error('❌ Error in GET /api/jointext:', error);
     await logError({
       type: 'api',
       endpoint: '/api/jointext',
@@ -137,24 +143,99 @@ router.put('/', verifyAdmin, async (req, res) => {
   try {
     const joinText = req.body;
     
-    // Validate blocks structure
-    if (!joinText.blocks || !Array.isArray(joinText.blocks)) {
+    // Validate hero structure (optional)
+    if (joinText.hero) {
+      if (!joinText.hero.title || !joinText.hero.subtitle) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid hero data',
+          message: 'hero must have title and subtitle'
+        });
+      }
+      if (joinText.hero.badges && !Array.isArray(joinText.hero.badges)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid hero badges',
+          message: 'hero.badges must be an array'
+        });
+      }
+    }
+    
+    // Validate sections structure
+    if (!joinText.sections || !Array.isArray(joinText.sections)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid join text data',
-        message: 'blocks is required and must be an array'
+        message: 'sections is required and must be an array'
       });
     }
 
-    // Validate each block has required fields
-    for (let i = 0; i < joinText.blocks.length; i++) {
-      const block = joinText.blocks[i];
-      if (!block.id || !block.type || block.order === undefined || !block.data) {
+    // Validate each section
+    for (let i = 0; i < joinText.sections.length; i++) {
+      const section = joinText.sections[i];
+      
+      if (!section.id || section.order === undefined || !Array.isArray(section.blocks)) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid block data',
-          message: `Block at index ${i} is missing required fields (id, type, order, data)`
+          error: 'Invalid section data',
+          message: `Section at index ${i} is missing required fields (id, order, blocks)`
         });
+      }
+
+      // Validate each block in the section
+      for (let j = 0; j < section.blocks.length; j++) {
+        const block = section.blocks[j];
+        
+        if (!block.id || !block.type || !block.layout || block.order === undefined || !block.title) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid block data',
+            message: `Block at section ${i}, index ${j} is missing required fields (id, type, layout, order, title)`
+          });
+        }
+
+        // Validate block type
+        if (!['text', 'list', 'contact'].includes(block.type)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid block type',
+            message: `Block type must be text, list, or contact (section ${i}, block ${j})`
+          });
+        }
+
+        // Validate layout
+        if (!['full', 'left', 'right'].includes(block.layout)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid block layout',
+            message: `Block layout must be full, left, or right (section ${i}, block ${j})`
+          });
+        }
+
+        // Validate type-specific fields
+        if (block.type === 'text' && !block.content) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid text block',
+            message: `Text blocks must have content (section ${i}, block ${j})`
+          });
+        }
+
+        if (block.type === 'list' && !Array.isArray(block.items)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid list block',
+            message: `List blocks must have items array (section ${i}, block ${j})`
+          });
+        }
+
+        if (block.type === 'contact' && !block.discord && !block.email) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid contact block',
+            message: `Contact blocks must have at least discord or email (section ${i}, block ${j})`
+          });
+        }
       }
     }
 
@@ -169,7 +250,7 @@ router.put('/', verifyAdmin, async (req, res) => {
       context: { 
         username: req.admin.username,
         ip: req.ip,
-        blockCount: joinText.blocks.length
+        sectionCount: joinText.sections.length
       }
     });
 
@@ -200,9 +281,11 @@ router.put('/', verifyAdmin, async (req, res) => {
 router.post('/seed', verifyAdmin, async (req, res) => {
   try {
     const defaultJoinText = getDefaultJoinText();
+    console.log('🌱 Seeding join text with', defaultJoinText.sections?.length || 0, 'sections');
     
     // Save default join text to database
     await saveJoinText(defaultJoinText);
+    console.log('✅ Join text seeded successfully');
     
     // Log the seed action
     await logError({
@@ -211,7 +294,8 @@ router.post('/seed', verifyAdmin, async (req, res) => {
       error: new Error('Join text seeded'),
       context: { 
         username: req.admin.username,
-        ip: req.ip
+        ip: req.ip,
+        sectionCount: defaultJoinText.sections?.length || 0
       }
     });
 
@@ -221,6 +305,7 @@ router.post('/seed', verifyAdmin, async (req, res) => {
       joinText: defaultJoinText
     });
   } catch (error) {
+    console.error('❌ Error seeding join text:', error);
     await logError({
       type: 'api',
       endpoint: '/api/jointext/seed',
@@ -237,72 +322,61 @@ router.post('/seed', verifyAdmin, async (req, res) => {
 });
 
 /**
- * Get default join text content - Block-based structure
+ * Get default join text content - Section-based structure
  * Exported for use in install route
  * 
+ * Structure:
+ * - sections: Array of section objects
+ * - Each section contains blocks that can be positioned left/right/full
+ * 
  * Block types:
- * - heading: Main page heading with floating text
- * - text: Single paragraph text
- * - text-highlight: Highlighted/bold text
- * - list: Single column list with title
- * - two-column-list: Two columns of lists side by side
- * - schedule: Raid schedule with day/time/activity
- * - contact: Contact section with Discord/Email links
+ * - text: Simple text content with title
+ * - list: List of items with title
+ * - contact: Contact information with Discord/Email links
+ * 
+ * Layout options:
+ * - full: Takes entire width of section
+ * - left: Takes left half of section
+ * - right: Takes right half of section
  */
 export function getDefaultJoinText() {
   return {
-    blocks: [
-      // Block 1: Main Heading
+    hero: {
+      title: "Join Our Guild",
+      subtitle: "Embark on epic adventures with skilled players. We're recruiting dedicated raiders and social members.",
+      badges: [
+        { label: "Active Community", color: "gold" },
+        { label: "Mythic Progression", color: "blue" },
+        { label: "All Roles Welcome", color: "green" }
+      ]
+    },
+    sections: [
+      // Section 1: Welcome (Full Width)
       {
-        id: "block-heading",
-        type: "heading",
+        id: "section-1",
         order: 0,
-        data: {
-          floatingText: "War Within Season 3",
-          highlightText: "GUILD NAME",
-          mainText: "is recruiting"
-        }
+        blocks: [
+          {
+            id: "block-1",
+            order: 0,
+            type: "text",
+            layout: "full",
+            title: "Welcome to Our Guild",
+            content: "GUILD NAME is a semi-hardcore guild located on the retail EU-Ravencrest Realm. We're looking for players who can strengthen our roster and help us progress Mythic as far as possible.\n\nThe guild is welcoming and open to everyone. Our players are from across the globe, but unite under our banner to enjoy all aspects of the game."
+          }
+        ]
       },
       
-      // Block 2: Intro Paragraph 1
+      // Section 2: Requirements & Benefits (Split)
       {
-        id: "block-intro-1",
-        type: "text",
+        id: "section-2",
         order: 1,
-        data: {
-          content: "GUILD NAME is a semi-hardcore guild located on the retail EU-Ravencrest Realm. We're looking for players who can strengthen our roster and help us progress Mythic as far as possible."
-        }
-      },
-      
-      // Block 3: Intro Paragraph 2
-      {
-        id: "block-intro-2",
-        type: "text",
-        order: 2,
-        data: {
-          content: "The guild is welcoming and open to everyone. Our players are from across the globe, but unite under our banner to enjoy all aspects of the game."
-        }
-      },
-      
-      // Block 4: Intro Highlight
-      {
-        id: "block-intro-highlight",
-        type: "text-highlight",
-        order: 3,
-        data: {
-          content: "All social applicants and classes are welcome. For Mythic Raiding we have the following criteria and requirements - exceptions are possible for exceptional applicants."
-        }
-      },
-      
-      // Block 5: Requirements (Two Column)
-      {
-        id: "block-requirements",
-        type: "two-column-list",
-        order: 4,
-        data: {
-          sectionTitle: "What we're looking for",
-          icon: "work",
-          leftColumn: {
+        blocks: [
+          {
+            id: "block-2",
+            order: 0,
+            type: "list",
+            layout: "left",
             title: "Mythic Raiding Requirements",
             items: [
               "Item Level: 628+ for Season 3 progression",
@@ -313,7 +387,11 @@ export function getDefaultJoinText() {
               "Attitude: Can take Constructive Criticism in stride"
             ]
           },
-          rightColumn: {
+          {
+            id: "block-3",
+            order: 1,
+            type: "list",
+            layout: "right",
             title: "Guild Benefits",
             items: [
               "Organized Raid Schedule: Consistent raid times with clear communication",
@@ -324,18 +402,19 @@ export function getDefaultJoinText() {
               "PvP Activities: Rated battlegrounds and arena teams"
             ]
           }
-        }
+        ]
       },
       
-      // Block 6: Application Process (Two Column)
+      // Section 3: Application & Current Needs (Split)
       {
-        id: "block-application",
-        type: "two-column-list",
-        order: 5,
-        data: {
-          sectionTitle: "Application Process & Current Needs",
-          icon: "school",
-          leftColumn: {
+        id: "section-3",
+        order: 2,
+        blocks: [
+          {
+            id: "block-4",
+            order: 0,
+            type: "list",
+            layout: "left",
             title: "Application Process",
             items: [
               "Submit Application: Fill out our recruitment form with your details",
@@ -344,7 +423,11 @@ export function getDefaultJoinText() {
               "Guild Membership: Full access to guild benefits and progression"
             ]
           },
-          rightColumn: {
+          {
+            id: "block-5",
+            order: 1,
+            type: "list",
+            layout: "right",
             title: "Current Needs",
             items: [
               "Healers: All healing specializations welcome",
@@ -353,104 +436,50 @@ export function getDefaultJoinText() {
               "Social Members: Casual players welcome to join our community"
             ]
           }
-        }
+        ]
       },
       
-      // Block 7: Raid Schedule
+      // Section 4: Raid Schedule (Full Width)
       {
-        id: "block-schedule",
-        type: "schedule",
-        order: 6,
-        data: {
-          sectionTitle: "Raid Schedule",
-          icon: "schedule",
-          items: [
-            { day: "Tuesday", time: "20:00 - 23:00 CET", activity: "Mythic Progression" },
-            { day: "Thursday", time: "20:00 - 23:00 CET", activity: "Mythic Progression" },
-            { day: "Sunday", time: "19:00 - 22:00 CET", activity: "Heroic Farm / Alt Runs" }
-          ]
-        }
-      },
-      
-      // Block 8: Guild Culture (Two Column)
-      {
-        id: "block-culture",
-        type: "two-column-list",
-        order: 7,
-        data: {
-          sectionTitle: "Guild Culture & Expectations",
-          icon: "group",
-          leftColumn: {
-            title: "What We Expect",
+        id: "section-4",
+        order: 3,
+        blocks: [
+          {
+            id: "block-6",
+            order: 0,
+            type: "list",
+            layout: "full",
+            title: "Raid Schedule",
             items: [
-              "Attendance: 80% raid attendance for core raiders",
-              "Preparation: Come prepared with consumables and knowledge",
-              "Communication: Active participation in Discord during raids",
-              "Improvement: Willingness to learn and improve",
-              "Respect: Treat all members with respect and dignity"
-            ]
-          },
-          rightColumn: {
-            title: "What You Can Expect",
-            items: [
-              "Support: Help with gearing, enchants, and consumables",
-              "Guidance: Experienced players to help you improve",
-              "Community: Friendly atmosphere both in-game and Discord",
-              "Progression: Clear goals and progression path",
-              "Fun: We take raiding seriously but have fun doing it"
+              "Tuesday: 20:00 - 23:00 CET - Mythic Progression",
+              "Thursday: 20:00 - 23:00 CET - Mythic Progression",
+              "Sunday: 19:00 - 22:00 CET - Heroic Farm / Alt Runs"
             ]
           }
-        }
+        ]
       },
       
-      // Block 9: Achievements (Two Column)
+      // Section 5: Contact (Full Width)
       {
-        id: "block-achievements",
-        type: "two-column-list",
-        order: 8,
-        data: {
-          sectionTitle: "Guild Achievements & Goals",
-          icon: "star",
-          leftColumn: {
-            title: "Current Season Goals",
-            items: [
-              "Mythic Progression: Clear current tier on Mythic difficulty",
-              "Guild Ranking: Maintain top 500 EU ranking",
-              "Roster Development: Build a strong, consistent 25-man roster",
-              "Community Growth: Expand our social member base"
-            ]
-          },
-          rightColumn: {
-            title: "Long-term Vision",
-            items: [
-              "Consistent Progression: Maintain steady Mythic progression each tier",
-              "Community Building: Create a welcoming environment for all players",
-              "Player Development: Help members improve and achieve their goals",
-              "Guild Stability: Build a sustainable, long-term guild structure"
-            ]
+        id: "section-5",
+        order: 4,
+        blocks: [
+          {
+            id: "block-7",
+            order: 0,
+            type: "contact",
+            layout: "full",
+            title: "Ready to Join Us?",
+            discord: {
+              label: "Join our Discord",
+              url: "https://discord.gg/yourguild"
+            },
+            email: {
+              label: "Contact Officers",
+              url: "mailto:officers@yourguild.com"
+            }
           }
-        }
-      },
-      
-      // Block 10: Contact
-      {
-        id: "block-contact",
-        type: "contact",
-        order: 9,
-        data: {
-          sectionTitle: "Ready to Join Us?",
-          icon: "contact",
-          description: "If you're interested in joining our guild, please reach out to us through one of the following channels:",
-          discord: {
-            label: "Join our Discord",
-            url: "https://discord.gg/yourguild"
-          },
-          email: {
-            label: "Contact Officers",
-            url: "mailto:officers@yourguild.com"
-          },
-          footer: "We typically respond to applications within 24-48 hours. Don't hesitate to reach out with any questions!"
-        }
+        ]
       }
     ]
   };

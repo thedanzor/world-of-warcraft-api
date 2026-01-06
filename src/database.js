@@ -1003,9 +1003,11 @@ export async function saveJoinText(joinText) {
       createdAt: joinText.createdAt || new Date()
     };
     
-    const result = await joinTextCollection.updateOne(
+    // Use replaceOne instead of updateOne with $set to completely replace the document
+    // This ensures old format data is removed when saving new format
+    const result = await joinTextCollection.replaceOne(
       {},
-      { $set: document },
+      document,
       { upsert: true }
     );
     

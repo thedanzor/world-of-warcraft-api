@@ -323,10 +323,14 @@ router.post('/', async (req, res) => {
     
     // Seed join text if it doesn't exist
     const joinTextExists = await hasJoinText();
+    console.log('📋 Join text exists:', joinTextExists);
     if (!joinTextExists) {
       const defaultJoinText = getDefaultJoinText();
+      console.log('🌱 Seeding join text with', defaultJoinText.sections?.length || 0, 'sections');
       await saveJoinText(defaultJoinText);
       console.log('✅ Seeded default join text');
+    } else {
+      console.log('ℹ️  Join text already exists, skipping seed');
     }
     
     // Clear config cache so new settings are loaded
