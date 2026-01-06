@@ -6,6 +6,7 @@ Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 ## Version 2.0 Changelog 🆕
 
 ### Major Features
+- **Dynamic Join/Recruitment Content API**: Complete system for managing guild recruitment page content
 - **Guided Installation System**: Complete installation wizard with step-by-step configuration
 - **Admin Authentication System**: Secure admin authentication for protected routes
 - **Database-Based Configuration**: App settings stored in MongoDB instead of environment variables
@@ -14,6 +15,9 @@ Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 - **Protected Fields**: Guild name, realm, and API credentials protected from modification
 
 ### New Endpoints
+- **GET `/api/jointext`** - Get join page content (public endpoint)
+- **PUT `/api/jointext`** - Update join page content (admin only, Basic Auth required)
+- **POST `/api/jointext/seed`** - Seed database with example join content (admin only)
 - **GET `/api/install`** - Check installation status and get default configuration
 - **POST `/api/install`** - Save app settings with Battle.net API validation
 - **POST `/api/install/login`** - Admin authentication for protected routes
@@ -44,10 +48,55 @@ Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 - **Field Protection**: Server-side protection of critical configuration fields
 - **Session Management**: Client-side session storage for authentication state
 
+### Join/Recruitment Content Management
+- **Flexible Content Structure**: Section-based system with nested blocks for maximum flexibility
+- **Hero Section**: Customizable hero with title, subtitle, and colored badges (gold/blue/green)
+- **Block Types**:
+  - **Text Blocks**: Rich text content with title and body
+  - **List Blocks**: Bullet-pointed lists for requirements, schedules, benefits
+  - **Contact Blocks**: Discord and email contact information
+- **Layout System**: Each block can be positioned as full-width, left-half, or right-half
+- **Content Validation**: Server-side validation of all content structure and required fields
+- **Seed Data**: Default example content provided for new installations
+- **Database Integration**: All content stored in MongoDB with efficient retrieval
+- **Caching Strategy**: No-cache headers ensure fresh content delivery
+- **Content Structure**:
+  ```json
+  {
+    "hero": {
+      "title": "Join Our Guild",
+      "subtitle": "Description text",
+      "badges": [
+        { "label": "Active Community", "color": "gold" }
+      ]
+    },
+    "sections": [
+      {
+        "id": "section-1",
+        "order": 0,
+        "blocks": [
+          {
+            "id": "block-1",
+            "order": 0,
+            "type": "text|list|contact",
+            "layout": "full|left|right",
+            "title": "Block Title",
+            "content": "...",  // for text blocks
+            "items": [...],     // for list blocks
+            "discord": {...},   // for contact blocks
+            "email": {...}      // for contact blocks
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
 ### Database Collections
+- **JoinText Collection**: Stores guild recruitment/join page content with section/block structure
 - **AppSettings Collection**: Stores all application configuration
 - **Admin Collection**: Stores admin user accounts with hashed passwords
-- **Reset Functionality**: Preserves AppSettings and Admin collections during reset
+- **Reset Functionality**: Preserves AppSettings, Admin, and JoinText collections during reset
 
 ### Migration from v1.5.0
 - **No Breaking Changes**: All existing endpoints remain functional
@@ -246,6 +295,7 @@ SIGNUP_COLLECTION=season3_signup
 MEMBERS_COLLECTION_NAME=members
 ERRORS_COLLECTION_NAME=error_logs
 TOP_SEASONAL_COLLECTION_NAME=topSeasonal
+JOIN_TEXT_COLLECTION_NAME=jointext  # v2.0+ Join/Recruitment page content
 
 # Server Configuration
 PORT=8000
@@ -928,6 +978,196 @@ Handles Season 3 signup submissions.
   }
 }
 ```
+
+## Join/Recruitment Content API 🆕 **NEW v2.0**
+
+### GET `/api/jointext`
+Returns guild recruitment/join page content. **Public endpoint** - no authentication required.
+
+**Response:**
+```json
+{
+  "success": true,
+  "joinText": {
+    "hero": {
+      "title": "Join Our Guild",
+      "subtitle": "Embark on epic adventures with skilled players.",
+      "badges": [
+        { "label": "Mythic Raiding", "color": "gold" },
+        { "label": "PvP Arenas", "color": "blue" },
+        { "label": "Mythic+ Dungeons", "color": "green" }
+      ]
+    },
+    "sections": [
+      {
+        "id": "section-1",
+        "order": 0,
+        "blocks": [
+          {
+            "id": "block-1",
+            "order": 0,
+            "type": "text",
+            "layout": "full",
+            "title": "Welcome to Our Guild",
+            "content": "GUILD NAME is a semi-hardcore guild..."
+          },
+          {
+            "id": "block-2",
+            "order": 1,
+            "type": "list",
+            "layout": "left",
+            "title": "Requirements",
+            "items": [
+              "Item Level: 628+",
+              "Raid Experience: 8/8 Heroic",
+              "Good logs and performance"
+            ]
+          },
+          {
+            "id": "block-3",
+            "order": 2,
+            "type": "contact",
+            "layout": "full",
+            "title": "Ready to Join Us?",
+            "discord": {
+              "label": "Join our Discord",
+              "url": "https://discord.gg/yourguild"
+            },
+            "email": {
+              "label": "Contact Officers",
+              "url": "mailto:officers@yourguild.com"
+            }
+          }
+        ]
+      }
+    ],
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Failed to fetch join text",
+  "message": "Database connection failed"
+}
+```
+
+**Notes:**
+- Returns default content if no custom content exists in database
+- No authentication required
+- Content structure includes hero section and multiple sections with blocks
+- Each block can be `text`, `list`, or `contact` type
+- Layout options: `full` (full-width), `left` (left half), `right` (right half)
+- Badge colors: `gold`, `blue`, `green`
+
+### PUT `/api/jointext`
+Updates guild recruitment/join page content. **Admin only** - requires Basic Auth.
+
+**Authentication:**
+- Basic Auth required
+- Username and password from admin account
+
+**Request Body:**
+```json
+{
+  "hero": {
+    "title": "Join Our Guild",
+    "subtitle": "Description text",
+    "badges": [
+      { "label": "Active Community", "color": "gold" }
+    ]
+  },
+  "sections": [
+    {
+      "id": "section-1",
+      "order": 0,
+      "blocks": [
+        {
+          "id": "block-1",
+          "order": 0,
+          "type": "text",
+          "layout": "full",
+          "title": "Block Title",
+          "content": "Block content..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Join text updated successfully"
+}
+```
+
+**Validation Errors:**
+```json
+{
+  "success": false,
+  "error": "Invalid data structure",
+  "message": "Missing required field: hero"
+}
+```
+
+**Authentication Errors:**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid credentials"
+}
+```
+
+**Validation Rules:**
+- `hero` object required with `title`, `subtitle`, and `badges` array
+- `sections` array required
+- Each section must have `id`, `order`, and `blocks` array
+- Each block must have `id`, `order`, `type`, `layout`, and `title`
+- Text blocks require `content` field
+- List blocks require `items` array
+- Contact blocks require `discord` and/or `email` objects with `label` and `url`
+- Layout must be one of: `full`, `left`, `right`
+- Block type must be one of: `text`, `list`, `contact`
+- Badge color must be one of: `gold`, `blue`, `green`
+
+### POST `/api/jointext/seed`
+Seeds the database with example/default join page content. **Admin only** - requires Basic Auth.
+
+**Authentication:**
+- Basic Auth required
+- Username and password from admin account
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Join text seeded successfully with default content"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid credentials"
+}
+```
+
+**Notes:**
+- Replaces existing content with default example content
+- Useful for resetting to default state or initial setup
+- Includes hero section with title, subtitle, and badges
+- Includes example sections for welcome, requirements, benefits, schedule, and contact
+- All content is fully editable after seeding via PUT endpoint
 
 ## Error Management API 🆕 **NEW v1.4**
 
