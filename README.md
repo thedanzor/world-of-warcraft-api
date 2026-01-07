@@ -3,7 +3,30 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
-## Version 2.0 Changelog 🆕
+## Version 2.1 Changelog 🆕
+
+### Season Signup System Improvements
+- **Renamed Season Routes**: Updated all routes from `/api/season3/*` to `/api/seasons/*` for better generic naming
+- **Test/Demo Character Filtering**: Added validation to prevent test/demo characters from being submitted
+  - Frontend form validation
+  - Frontend API route validation
+  - Backend API validation (three-layer protection)
+  - Blocks common test patterns: test, demo, example, sample, tester, testing, dummy, fake, placeholder, temp, temporary
+- **Improved Data Retrieval**: Updated query to include documents without type field for backward compatibility
+- **Component Renaming**: Renamed `Season3*` components to `Seasons*` for consistency
+- **Field Name Updates**: Support for both old (`season3CharacterName`, `season3Goal`) and new (`seasonCharacterName`, `seasonGoal`) field names
+- **Admin Panel Enhancements**: Updated admin panel to display both old and new field names correctly
+
+### New Endpoints
+- **GET `/api/seasons/data`** - Returns all season signups (renamed from `/api/season3/data`)
+- **POST `/api/seasons/signup`** - Handles season signup submissions (renamed from `/api/season3/signup`)
+- **GET `/api/season-signups`** - Get all season signups for admin panel (existing, enhanced)
+
+### Database Functions
+- **`getSeasonsSignups()`** - New alias function for `getSeason3Signups()` for consistency
+- **Enhanced Query**: Updated to retrieve signups with or without type field for backward compatibility
+
+## Version 2.0 Changelog
 
 ### Major Features
 - **Dynamic Join/Recruitment Content API**: Complete system for managing guild recruitment page content

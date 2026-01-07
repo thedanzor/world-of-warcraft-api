@@ -288,6 +288,7 @@ export async function saveSeason3Signup(signupData) {
     return result;
   } catch (error) {
     console.error('❌ Failed to save Season 3 signup to MongoDB:', error);
+    console.error('❌ Error details:', error.message, error.stack);
     throw error;
   }
 }
@@ -301,9 +302,9 @@ export async function getSeason3Signups() {
     const { db } = await connectToDatabase();
     const season3Collection = db.collection(SEASON_SIGN_UP);
     
-    // Find all signup documents
+    // Find all signup documents (also include documents without type field for backward compatibility)
     const signups = await season3Collection
-      .find({ type: 'signup' })
+      .find({ $or: [{ type: 'signup' }, { type: { $exists: false } }] })
       .sort({ timestamp: -1 })
       .toArray();
     
@@ -312,6 +313,15 @@ export async function getSeason3Signups() {
     console.error('❌ Failed to get Season 3 signups from MongoDB:', error);
     throw error;
   }
+}
+
+/**
+ * Get all season signup documents from MongoDB, sorted by timestamp (descending).
+ * Alias for getSeason3Signups for consistency with new naming.
+ * @returns {Promise<Object[]>} Array of signup documents
+ */
+export async function getSeasonsSignups() {
+  return getSeason3Signups();
 }
 
 /**
