@@ -3,6 +3,39 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
+## Version 2.2 Changelog 🆕
+
+### Roster Management API
+- **Admin-Based Roster System**: Roster creation and modification now requires admin authentication
+- **New Roster Endpoints**:
+  - **GET `/api/roster`** - Public endpoint to retrieve current roster (read-only)
+  - **POST `/api/roster`** - Admin-only endpoint to create/update roster (requires Basic Auth)
+  - **DELETE `/api/roster/:characterId`** - Admin-only endpoint to remove character from roster (requires Basic Auth)
+- **Database Storage**: 
+  - Roster data stored in MongoDB `rosters` collection
+  - Tracks last updated timestamp and admin username
+  - Supports multiple role types: tanks, healers, dps, substitutes, socials
+- **Security Features**:
+  - Admin authentication middleware for write operations
+  - Basic Auth required for POST and DELETE endpoints
+  - Security logging for failed authentication attempts
+  - Public read access for roster display
+- **Data Structure**:
+  - Roster stored with role-based character arrays
+  - Automatic timestamp tracking
+  - Admin username tracking for audit purposes
+
+### New Endpoints
+- **GET `/api/roster`** - Get current roster (public, no authentication required)
+- **POST `/api/roster`** - Create or update roster (admin only, Basic Auth required)
+- **DELETE `/api/roster/:characterId`** - Remove character from roster (admin only, Basic Auth required)
+
+### Database Collections
+- **Rosters Collection**: New MongoDB collection for storing roster configurations
+  - Collection name: `rosters` (configurable via environment variable)
+  - Stores role-based character arrays
+  - Tracks update history with timestamps and admin usernames
+
 ## Version 2.1 Changelog 🆕
 
 ### Season Signup System Improvements
@@ -1001,6 +1034,132 @@ Handles Season 3 signup submissions.
   }
 }
 ```
+
+## Roster Management API 🆕 **NEW v2.2**
+
+### GET `/api/roster`
+Returns the current roster configuration. **Public endpoint** - no authentication required.
+
+**Response:**
+```json
+{
+  "success": true,
+  "roster": {
+    "tanks": ["character-id-1", "character-id-2"],
+    "healers": ["character-id-3", "character-id-4"],
+    "dps": ["character-id-5", "character-id-6"],
+    "substitutes": ["character-id-7"],
+    "socials": ["character-id-8"],
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "updatedBy": "admin"
+  }
+}
+```
+
+**Empty Roster Response:**
+```json
+{
+  "success": true,
+  "roster": {
+    "tanks": [],
+    "healers": [],
+    "dps": [],
+    "substitutes": [],
+    "socials": []
+  }
+}
+```
+
+### POST `/api/roster`
+Creates or updates the roster configuration. **Admin only** - requires Basic Auth.
+
+**Authentication:**
+- Basic Auth required
+- Username and password from admin account
+
+**Request Body:**
+```json
+{
+  "tanks": ["character-id-1", "character-id-2"],
+  "healers": ["character-id-3", "character-id-4"],
+  "dps": ["character-id-5", "character-id-6"],
+  "substitutes": ["character-id-7"],
+  "socials": ["character-id-8"]
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Roster saved successfully",
+  "roster": {
+    "tanks": ["character-id-1", "character-id-2"],
+    "healers": ["character-id-3", "character-id-4"],
+    "dps": ["character-id-5", "character-id-6"],
+    "substitutes": ["character-id-7"],
+    "socials": ["character-id-8"],
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "updatedBy": "admin"
+  }
+}
+```
+
+**Validation Errors:**
+```json
+{
+  "success": false,
+  "error": "Missing roster data",
+  "message": "All role arrays (tanks, healers, dps, substitutes, socials) are required"
+}
+```
+
+**Authentication Errors:**
+```json
+{
+  "success": false,
+  "error": "Authentication required",
+  "message": "Please provide admin credentials"
+}
+```
+
+### DELETE `/api/roster/:characterId`
+Removes a character from all roster roles. **Admin only** - requires Basic Auth.
+
+**Authentication:**
+- Basic Auth required
+- Username and password from admin account
+
+**URL Parameters:**
+- `characterId` - The character ID to remove from roster
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Character removed from roster",
+  "roster": {
+    "tanks": ["character-id-1"],
+    "healers": ["character-id-3", "character-id-4"],
+    "dps": ["character-id-5", "character-id-6"],
+    "substitutes": ["character-id-7"],
+    "socials": ["character-id-8"],
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "updatedBy": "admin"
+  }
+}
+```
+
+**Error Responses:**
+- `400` - Missing character ID
+- `401` - Authentication required
+- `404` - Roster not found
+- `500` - Server error
+
+**Notes:**
+- Character is removed from all role arrays (tanks, healers, dps, substitutes, socials)
+- Roster is automatically updated with new timestamp and admin username
+- If no roster exists, returns 404 error
 
 ## Join/Recruitment Content API 🆕 **NEW v2.0**
 
