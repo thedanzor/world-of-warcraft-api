@@ -162,7 +162,7 @@ router.get('/:realm/:character', async (req, res) => {
     console.log("Member response:", memberResponse);
     
     if (!memberResponse) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         error: 'Character not found',
         message: `Character ${character}-${realm} not found`
@@ -170,7 +170,7 @@ router.get('/:realm/:character', async (req, res) => {
     }
 
     if (memberResponse.level < LEVEL_REQUIREMENT) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         error: 'Character level too low',
         message: `Character must be at least level ${LEVEL_REQUIREMENT}`
@@ -178,7 +178,7 @@ router.get('/:realm/:character', async (req, res) => {
     }
 
     if (memberResponse.equipped_item_level < ITEM_LEVEL_REQUIREMENT) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         error: 'Character item level too low',
         message: `Character must have at least ${ITEM_LEVEL_REQUIREMENT} item level`
@@ -221,7 +221,7 @@ router.get('/:realm/:character', async (req, res) => {
     if (requestedDataTypes.includes('raid')) {
       try {
         const raidResponse = await BnetApi.query(raidProgressUrl);
-        dataToAppend.raidHistory = raidResponse.expansions.find(item => 
+        dataToAppend.raidHistory = raidResponse?.expansions?.find(item => 
           item.expansion.name === 'Current Season'
         ) || {};
       } catch (error) {
@@ -380,6 +380,17 @@ router.get('/:realm/:character', async (req, res) => {
 
   } catch (error) {
     const { realm, character } = req.params;
+    
+    // Check if it's a 404 from Battle.net API (character not found)
+    if (error.response?.status === 404 || error.status === 404 || (error.message && error.message.includes('404'))) {
+      console.log(`⚠️ Character ${character}-${realm} not found on Battle.net`);
+      return res.status(200).json({
+        success: false,
+        error: 'Character not found',
+        message: `Character ${character}-${realm} not found on Battle.net`
+      });
+    }
+
     await logError({
       type: 'api',
       endpoint: `/api/fetch/${realm}/${character}`,
@@ -451,6 +462,17 @@ router.get('/:realm/:character/transmog', async (req, res) => {
 
   } catch (error) {
     const { realm, character } = req.params;
+    
+    // Check if it's a 404 from Battle.net API (character not found)
+    if (error.response?.status === 404 || error.status === 404 || (error.message && error.message.includes('404'))) {
+      console.log(`⚠️ Character ${character}-${realm} transmog not found on Battle.net`);
+      return res.status(200).json({
+        success: false,
+        error: 'Character transmog not found',
+        message: `Character ${character}-${realm} transmog not found on Battle.net`
+      });
+    }
+
     await logError({
       type: 'api',
       endpoint: `/api/fetch/${realm}/${character}/transmog`,

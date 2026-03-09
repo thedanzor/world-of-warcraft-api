@@ -239,7 +239,7 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                         // Continue processing other characters even if this one fails
                     }
                 } else {
-                    console.log(`⚠️ Character ${characterName}-${server} not found or failed to fetch`);
+                    console.log(`⚠️ Character ${characterName}-${server} not found or skipped: ${result.message || 'Unknown reason'}`);
                 }
             } catch (error) {
                 // Log error but don't throw - continue processing other characters

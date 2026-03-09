@@ -15,21 +15,21 @@ export async function startCron(io) {
   }
   
   // // Run guild update immediately on startup
-  // console.log('🚀 Running initial guild update on startup...');
-  // startGuildUpdate(['raid', 'mplus', 'pvp'], io)
-  //   .then(result => {
-  //     if (result.success) {
-  //       console.log('✅ Initial guild update completed successfully');
-  //       console.log('📊 Process ID:', result.processId);
-  //       console.log('🎯 Data types:', result.dataTypes);
-  //     } else {
-  //       console.log('❌ Initial guild update failed:', result.error);
-  //       console.log('💬 Message:', result.message);
-  //     }
-  //   })
-  //   .catch(error => {
-  //     console.error('💥 Initial guild update crashed:', error);
-  //   });
+  console.log('🚀 Running initial guild update on startup...');
+  startGuildUpdate(['raid', 'mplus', 'pvp'], io)
+    .then(result => {
+      if (result.success) {
+        console.log('✅ Initial guild update completed successfully');
+        console.log('📊 Process ID:', result.processId);
+        console.log('🎯 Data types:', result.dataTypes);
+      } else {
+        console.log('❌ Initial guild update failed:', result.error);
+        console.log('💬 Message:', result.message);
+      }
+    })
+    .catch(error => {
+      console.error('💥 Initial guild update crashed:', error);
+    });
 
   // Schedule regular updates every 30 minutes
   cron.schedule(cronSchedule, async () => {
