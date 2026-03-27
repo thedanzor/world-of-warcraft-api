@@ -33,16 +33,16 @@ async function transformCharacterData(character, config = null) {
     ?.filter(item => item.needsEnchant && !item.hasEnchant)
     ?.map(item => item.type) || [];
 
-  let oldSet = 0;
-  let newSet = 0;
+  let previousSet = 0;
+  let currentSet = 0;
   character.equipement?.forEach((item) => {
     if (item.isTierItem && item.level >= MIN_TIER_ITEMLEVEL) {
       const setName = item._raw?.set?.item_set?.name || "";
       const isCurrentSeason = CURRENT_SEASON_TIER_SETS.some(tierSetName => setName.includes(tierSetName));
       if (isCurrentSeason) {
-        newSet = newSet + 1;
+        currentSet = currentSet + 1;
       } else {
-        oldSet = oldSet + 1;
+        previousSet = previousSet + 1;
       }
     }
   });
@@ -78,15 +78,15 @@ async function transformCharacterData(character, config = null) {
     missingWaist: !hasQualifyingWaist,
     missingCloak: !hasQualifyingCloak,
     tierSets: {
-      season1: oldSet,
-      season2: newSet,
-      total: oldSet + newSet
+      previous: previousSet,
+      current: currentSet,
+      total: previousSet + currentSet
     },
     mplus: character.mplus?.current_mythic_rating?.rating || 0,
     raw_mplus: character.mplus,
     pvp: character.pvp?.rating || 0,
     raw_pvp: character.pvp,
-    hasTierSet: (oldSet + newSet) >= 4,
+    hasTierSet: (previousSet + currentSet) >= 4,
     isActiveInSeason2: character.isActiveInSeason2,
     lockStatus: character.lockStatus,
     media: character.media,

@@ -3,6 +3,47 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
+## Version 2.3.0 Changelog 🆕
+
+### Multi-Raid Expansion Tracking
+
+The raid lockout system has been completely rearchitected to support tracking **all raids within the current expansion** rather than a single configured raid.
+
+- **Dynamic Raid Detection**: `checkRaidLockouts` now iterates every instance under the configured `CURRENT_EXPANSION`, automatically picking up new raids (e.g. "March on Quel'Danas") without any code changes
+- **New `lockStatus.raids` Structure**: Per-instance, per-difficulty lockout data stored on each character — `{ 'The Voidspire': { id, difficulties: { Normal: { locked, bosses, total }, Heroic: {...} } } }`
+- **Backward-Compatible `lockStatus.lockedTo`**: The existing `Normal`/`Heroic`/`Mythic` aggregate keys are maintained so existing filter tabs continue to work without migration
+- **`CURRENT_RAID` → `CURRENT_EXPANSION`**: Config key renamed to reflect that the tracker now covers an entire expansion, not a single raid. The settings page falls back to the old key for existing installations
+
+### Upgrade System (`/api/upgrade`)
+
+New admin-protected upgrade route for running idempotent database migrations without manual intervention:
+
+- **`GET /api/upgrade/status`** — Lists all available migrations and whether each one is needed
+- **`POST /api/upgrade/run/:migrationId`** — Runs a single named migration
+- **`POST /api/upgrade/run-all`** — Runs every pending migration in sequence
+- **Admin Protected**: All endpoints require Basic Auth (existing admin credentials)
+
+#### Available Migrations
+
+| ID | Name | What it does |
+|----|------|--------------|
+| `migrate-config-keys` | Migrate Config Keys | Renames `CURRENT_RAID` → `CURRENT_EXPANSION` in `AppSettings` |
+| `resync-raid-data` | Re-sync Raid Data | Triggers a background guild update for raid data to populate `raidHistory` and `lockStatus.raids` |
+| `resync-tier-data` | Re-sync Tier Set Data | Triggers a full guild update to refresh equipment and tier set fields |
+
+### New Endpoints
+
+- **`GET /api/upgrade/status`** — Migration status overview (admin only)
+- **`POST /api/upgrade/run/:migrationId`** — Run a specific migration (admin only)
+- **`POST /api/upgrade/run-all`** — Run all pending migrations (admin only)
+
+### Configuration Changes
+
+- `CURRENT_EXPANSION` replaces `CURRENT_RAID` in `AppSettings` — existing installs are auto-migrated via the upgrade route
+- `checkRaidLockouts(raidData)` no longer accepts a `currentRaidName` parameter
+
+---
+
 ## Version 2.2 Changelog 🆕
 
 ### Roster Management API

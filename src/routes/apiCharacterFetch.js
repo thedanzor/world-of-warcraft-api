@@ -36,60 +36,80 @@ function isActiveInSeason2(character, seasonStartDate) {
 }
 
 /**
- * Checks raid lockout status for a character
- * @param {Object} raidData Character's raid data
- * @param {string} currentRaidName Current raid name from config
- * @returns {Object} Lockout status for each difficulty
+ * Checks raid lockout status for a character across all instances in the current expansion.
+ * Determines lockouts based on kills since the last Wednesday reset.
+ * @param {Object} raidData Character's raid expansion data (Midnight expansion object)
+ * @returns {Object} Lockout status per instance and aggregated per difficulty
  */
-function checkRaidLockouts(raidData, currentRaidName) {
+function checkRaidLockouts(raidData) {
   const lockouts = {
     isLocked: false,
-    lockedTo: {}
+    // Per-difficulty aggregate (for backward compat filtering: Normal/Heroic/Mythic tabs)
+    lockedTo: {},
+    // Per-instance breakdown: { 'The Voidspire': { id, difficulties: { Normal: {...}, Heroic: {...} } } }
+    raids: {}
   };
 
-  // Get the most recent Wednesday (raid reset day)
+  // Get the most recent Wednesday at midnight (raid reset day)
   const today = new Date();
   const lastWednesday = new Date();
   lastWednesday.setDate(today.getDate() - ((today.getDay() + 4) % 7));
   lastWednesday.setHours(0, 0, 0, 0);
 
   if (!raidData?.instances) {
-    console.log("No instances found in raidData");
     return lockouts;
   }
 
-  const currentRaid = raidData.instances.find(instance => 
-    instance.instance?.name === currentRaidName
-  );
+  raidData.instances.forEach(instanceData => {
+    const instanceName = instanceData.instance?.name;
+    if (!instanceName || !instanceData.modes) return;
 
-  if (!currentRaid) {
-    console.log("Current raid not found", raidData.instances.map(i => i.instance?.name));
-    return lockouts;
-  }
+    const instanceResult = { id: instanceData.instance?.id, difficulties: {} };
 
-  // Process each difficulty mode
-  currentRaid.modes.forEach(mode => {
-    const difficulty = mode.difficulty.name;
-    const progress = mode.progress;
+    instanceData.modes.forEach(mode => {
+      const difficulty = mode.difficulty.name;
+      const progress = mode.progress;
 
-    if (!progress || !progress.encounters) {
-      return;
-    }
+      if (!progress?.encounters) return;
 
-    // Check if any encounters were killed after last Wednesday
-    const recentKills = progress.encounters.filter(encounter => {
-      const killTime = new Date(encounter.last_kill_timestamp).getTime();
-      return killTime >= lastWednesday.getTime();
-    });
+      // Only count kills that occurred after the last Wednesday reset
+      const recentKills = progress.encounters.filter(encounter =>
+        encounter.last_kill_timestamp >= lastWednesday.getTime()
+      );
 
-    if (recentKills.length > 0) {
+      if (recentKills.length === 0) return;
+
       lockouts.isLocked = true;
-      lockouts.lockedTo[difficulty] = {
+
+      const difficultyEntry = {
         completed: progress.completed_count,
         total: progress.total_count,
         lastKill: Math.max(...recentKills.map(e => e.last_kill_timestamp)),
         encounters: recentKills.map(e => e.encounter.name)
       };
+
+      instanceResult.difficulties[difficulty] = difficultyEntry;
+
+      // Aggregate into lockedTo for backward-compatible difficulty filtering
+      if (!lockouts.lockedTo[difficulty]) {
+        lockouts.lockedTo[difficulty] = {
+          completed: 0,
+          total: 0,
+          lastKill: 0,
+          encounters: []
+        };
+      }
+      lockouts.lockedTo[difficulty].completed += difficultyEntry.completed;
+      lockouts.lockedTo[difficulty].total += difficultyEntry.total;
+      lockouts.lockedTo[difficulty].lastKill = Math.max(
+        lockouts.lockedTo[difficulty].lastKill,
+        difficultyEntry.lastKill
+      );
+      lockouts.lockedTo[difficulty].encounters.push(...difficultyEntry.encounters);
+    });
+
+    if (Object.keys(instanceResult.difficulties).length > 0) {
+      lockouts.raids[instanceName] = instanceResult;
     }
   });
 
@@ -101,9 +121,6 @@ router.get('/:realm/:character', async (req, res) => {
     // Load config from database
     const config = await getConfig();
     const {
-      API_PARAM_REQUIREMENTGS,
-      GUILD_NAME,
-      GUILD_REALM,
       LEVEL_REQUIREMENT,
       ITEM_LEVEL_REQUIREMENT,
       API_BATTLENET_KEY,
@@ -113,7 +130,7 @@ router.get('/:realm/:character', async (req, res) => {
       HEALERS = [],
       ENCHANTABLE_PIECES = [],
       SEASON_START_DATE,
-      CURRENT_RAID,
+      CURRENT_EXPANSION = 'Midnight',
       CURRENT_MPLUS_SEASON
     } = config || {};
 
@@ -222,7 +239,7 @@ router.get('/:realm/:character', async (req, res) => {
       try {
         const raidResponse = await BnetApi.query(raidProgressUrl);
         dataToAppend.raidHistory = raidResponse?.expansions?.find(item => 
-          item.expansion.name === 'Current Season'
+          item.expansion.name === CURRENT_EXPANSION
         ) || {};
       } catch (error) {
         console.error('Error fetching raid data:', error.message);
@@ -348,9 +365,9 @@ router.get('/:realm/:character', async (req, res) => {
       }
     });
 
-    // Check raid lockouts
+    // Check raid lockouts across all Midnight instances
     const lockStatus = requestedDataTypes.includes('raid') ? 
-      checkRaidLockouts(dataToAppend.raidHistory, CURRENT_RAID) : 
+      checkRaidLockouts(dataToAppend.raidHistory) : 
       null;
 
     const characterData = { 

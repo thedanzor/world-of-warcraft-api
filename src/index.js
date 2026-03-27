@@ -22,6 +22,7 @@ import installRouter from './routes/install.js';
 import configRouter from './routes/config.js';
 import resetRouter from './routes/reset.js';
 import settingsRouter from './routes/settings.js';
+import upgradeRouter from './routes/upgrade.js';
 import jointextRouter from './routes/jointext.js';
 import apiRosterRouter from './routes/apiRoster.js';
 import { logError } from './database.js';
@@ -73,6 +74,7 @@ app.use('/api/install', installRouter);
 app.use('/api/config', configRouter);
 app.use('/api/reset', resetRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/upgrade', upgradeRouter);
 app.use('/api/jointext', jointextRouter);
 app.use('/api/roster', apiRosterRouter);
 
