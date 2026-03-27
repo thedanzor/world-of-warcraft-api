@@ -3,10 +3,10 @@
  * @module tools/guildFetcher/seasonalStats
  */
 
-// Import the config as a module instead of parsing as JSON
+// Import the config as a fallback for the default season value
 const config = await import('../../app.config.js');
 
-const { CURRENT_MPLUS_SEASON } = config.default;
+const DEFAULT_MPLUS_SEASON = config.default.CURRENT_MPLUS_SEASON;
 
 /**
  * Process seasonal statistics for a single character
@@ -188,7 +188,7 @@ export function processCharacterSeasonalStats(character) {
  * @param {Array} characters - Array of character data with seasonal stats
  * @returns {Object} Guild-wide seasonal statistics
  */
-export function processGuildSeasonalStats(characters) {
+export function processGuildSeasonalStats(characters, season = DEFAULT_MPLUS_SEASON) {
   const guildStats = {
     totalCharacters: 0,
     charactersWithMplus: 0,
@@ -202,7 +202,7 @@ export function processGuildSeasonalStats(characters) {
     affixStats: {},
     roleStats: {},
     memberNetworks: {},
-    season: CURRENT_MPLUS_SEASON,
+    season: season,
     lastUpdated: new Date()
   };
 

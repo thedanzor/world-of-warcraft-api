@@ -78,7 +78,8 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
             LEVEL_REQUIREMENT,
             API_BATTLENET_KEY,
             API_BATTLENET_SECRET,
-            REGION
+            REGION,
+            CURRENT_MPLUS_SEASON
         } = config;
 
         // Business logic specific variables
@@ -285,7 +286,7 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                 const allMembers = await getAllMembers();
                 
                 // Process guild-wide seasonal statistics
-                const guildSeasonalStats = processGuildSeasonalStats(allMembers);
+                const guildSeasonalStats = processGuildSeasonalStats(allMembers, CURRENT_MPLUS_SEASON);
                 
                 // Get top achievements
                 const achievements = getTopSeasonalAchievements(guildSeasonalStats);
