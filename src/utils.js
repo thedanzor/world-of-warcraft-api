@@ -25,7 +25,6 @@ async function transformCharacterData(character, config = null) {
   const { 
     TANKS = [], 
     HEALERS = [], 
-    MIN_TIER_ITEMLEVEL = 640, 
     CURRENT_SEASON_TIER_SETS = [] 
   } = cfg || {};
 
@@ -36,9 +35,11 @@ async function transformCharacterData(character, config = null) {
   let previousSet = 0;
   let currentSet = 0;
   character.equipement?.forEach((item) => {
-    if (item.isTierItem && item.level >= MIN_TIER_ITEMLEVEL) {
+    if (item.isTierItem) {
       const setName = item._raw?.set?.item_set?.name || "";
-      const isCurrentSeason = CURRENT_SEASON_TIER_SETS.some(tierSetName => setName.includes(tierSetName));
+      const isCurrentSeason = CURRENT_SEASON_TIER_SETS.length > 0
+        ? CURRENT_SEASON_TIER_SETS.some(tierSetName => setName.includes(tierSetName))
+        : true;
       if (isCurrentSeason) {
         currentSet = currentSet + 1;
       } else {
