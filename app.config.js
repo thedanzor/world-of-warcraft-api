@@ -39,6 +39,12 @@ const data = {
     "CURRENT_MPLUS_SEASON": 16,
     "GUILLD_RANKS": [],
     "CURRENT_SEASON_TIER_SETS": [],
+    "SITE_NAME": "WoW Guild Audit Tool",
+    "SITE_SHORT_NAME": "WoW Guild Audit",
+    "SITE_DESCRIPTION": "Audit your World of Warcraft guild for raid readiness — track missing enchants, lockouts, Mythic+ rankings, and PvP standings.",
+    "SITE_KEYWORDS": "World of Warcraft, WoW, guild audit, raid readiness, mythic plus, Raider.io, Warcraft Logs",
+    "OG_IMAGE_URL": "/images/og-image.jpg",
+    "TWITTER_IMAGE_URL": "/images/twitter-image.jpg",
     "rioBase": "https://raider.io/api/v1",
     "mplus": { "maxRatingForScore": 3700 },
     "warcraftLogs": {

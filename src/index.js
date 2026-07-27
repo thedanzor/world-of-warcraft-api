@@ -42,7 +42,8 @@ const io = new Server(server, {
 });
 
 const port = process.env.PORT || 8000;
-const host = process.env.HOST || 'localhost';
+// Bind to all interfaces in production so Coolify/Docker proxies can reach the app
+const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
 
 // Middleware
 app.use(cors());

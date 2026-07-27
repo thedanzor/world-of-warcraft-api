@@ -3,6 +3,15 @@
 A Node.js Express API server that fetches and processes World of Warcraft guild data from the Battle.net API.
 Project created by Scott Jones (Holybarry-sylvanas) of scottjones.nl
 
+## Version 2.4.0 Changelog 🆕
+
+### Guild rank labels & SEO settings
+- `transformCharacterData` now includes `guildRankLabel` resolved from database `GUILLD_RANKS`
+- Default AppSettings seeds for `SITE_NAME`, `SITE_DESCRIPTION`, `SITE_KEYWORDS`, and social image URLs
+- Supports admin-managed SEO metadata returned via `/api/config`
+
+---
+
 ## Version 2.3.0 Changelog 🆕
 
 ### Multi-Raid Expansion Tracking

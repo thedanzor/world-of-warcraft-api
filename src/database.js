@@ -22,7 +22,7 @@ let client;
 let db;
 let collection;
 
-console.log(process.env, MONGODB_URI, DB_NAME, SEASON_SIGN_UP, MEMBERS_COLLECTION_NAME, ERRORS_COLLECTION_NAME);
+console.log('MongoDB config:', { db: DB_NAME, signup: SEASON_SIGN_UP, members: MEMBERS_COLLECTION_NAME, errors: ERRORS_COLLECTION_NAME });
 
 // Check for required environment variables
 if (!MONGODB_URI) throw new Error('Missing required environment variable: MONGODB_URI');

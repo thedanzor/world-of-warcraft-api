@@ -66,6 +66,13 @@ async function transformCharacterData(character, config = null) {
 
   const guildRankIndex = character.guildData?.rank;
   const guildRank = guildRankIndex;
+  const guildRanks = cfg.GUILLD_RANKS || [];
+  const guildRankLabel =
+    guildRankIndex != null && guildRanks[guildRankIndex]
+      ? guildRanks[guildRankIndex]
+      : guildRankIndex != null
+        ? String(guildRankIndex)
+        : '-';
 
   return {
     name: character.name,
@@ -74,6 +81,7 @@ async function transformCharacterData(character, config = null) {
     spec: character.metaData?.spec,
     itemLevel: character.itemlevel?.equiped,
     guildRank: guildRank,
+    guildRankLabel,
     ready: character.ready,
     missingEnchants,
     missingWaist: !hasQualifyingWaist,
