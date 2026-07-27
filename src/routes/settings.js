@@ -151,7 +151,7 @@ router.put('/', verifyAdmin, async (req, res) => {
     const updates = req.body;
     
     // Remove protected fields from updates
-    const protectedFields = ['GUILD_NAME', 'GUILD_REALM', 'API_BATTLENET_KEY', 'API_BATTLENET_SECRET', '_id'];
+    const protectedFields = ['GUILD_NAME', 'GUILD_REALM', 'API_BATTLENET_KEY', 'API_BATTLENET_SECRET', 'RAIDERIO_API_KEY', 'WCL_CLIENT_ID', 'WCL_CLIENT_SECRET', '_id'];
     const filteredUpdates = {};
     
     Object.keys(updates).forEach(key => {
@@ -169,6 +169,9 @@ router.put('/', verifyAdmin, async (req, res) => {
       GUILD_REALM: currentSettings.GUILD_REALM,
       API_BATTLENET_KEY: currentSettings.API_BATTLENET_KEY,
       API_BATTLENET_SECRET: currentSettings.API_BATTLENET_SECRET,
+      RAIDERIO_API_KEY: currentSettings.RAIDERIO_API_KEY,
+      WCL_CLIENT_ID: currentSettings.WCL_CLIENT_ID,
+      WCL_CLIENT_SECRET: currentSettings.WCL_CLIENT_SECRET,
       lastUpdated: new Date()
     };
 
@@ -197,7 +200,10 @@ router.put('/', verifyAdmin, async (req, res) => {
         ...updatedSettings,
         // Don't return API keys in response
         API_BATTLENET_KEY: undefined,
-        API_BATTLENET_SECRET: undefined
+        API_BATTLENET_SECRET: undefined,
+        RAIDERIO_API_KEY: undefined,
+        WCL_CLIENT_ID: undefined,
+        WCL_CLIENT_SECRET: undefined,
       }
     });
   } catch (error) {

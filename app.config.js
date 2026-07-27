@@ -38,7 +38,15 @@ const data = {
     "CURRENT_RAID": "Unknown Raid",
     "CURRENT_MPLUS_SEASON": 16,
     "GUILLD_RANKS": [],
-    "CURRENT_SEASON_TIER_SETS": []
+    "CURRENT_SEASON_TIER_SETS": [],
+    "rioBase": "https://raider.io/api/v1",
+    "mplus": { "maxRatingForScore": 3700 },
+    "warcraftLogs": {
+        "zones": [
+            { "id": 46, "name": "VS / DR / MQD", "patch": "12.0.0", "partition": 1, "difficulty": 4, "bossCount": 9 },
+            { "id": 46, "name": "VS / DR / MQD", "patch": "12.0.5", "partition": 2, "difficulty": 4, "bossCount": 9 }
+        ]
+    }
 }
 
 export default data;

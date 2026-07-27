@@ -165,12 +165,15 @@ router.get('/', async (req, res) => {
     // Remove sensitive data from defaults
     delete defaultConfig.API_BATTLENET_KEY;
     delete defaultConfig.API_BATTLENET_SECRET;
+    delete defaultConfig.RAIDERIO_API_KEY;
+    delete defaultConfig.WCL_CLIENT_ID;
+    delete defaultConfig.WCL_CLIENT_SECRET;
     
     // If AppSettings exists, return installed status but still allow access
     if (appSettingsExist) {
       // Get current settings (without sensitive data) for reference
       const currentSettings = await getAppSettings();
-      const { _id, API_BATTLENET_KEY, API_BATTLENET_SECRET, ...safeCurrentSettings } = currentSettings || {};
+      const { _id, API_BATTLENET_KEY, API_BATTLENET_SECRET, RAIDERIO_API_KEY, WCL_CLIENT_ID, WCL_CLIENT_SECRET, ...safeCurrentSettings } = currentSettings || {};
       
       // Determine which step should be active
       let suggestedStep = 0; // Start at step 0 (App Settings)
@@ -269,6 +272,9 @@ router.post('/', async (req, res) => {
     const {
       API_BATTLENET_KEY,
       API_BATTLENET_SECRET,
+      RAIDERIO_API_KEY,
+      WCL_CLIENT_ID,
+      WCL_CLIENT_SECRET,
       GUILD_NAME,
       GUILD_REALM,
       REGION,
@@ -277,11 +283,11 @@ router.post('/', async (req, res) => {
     } = settingsData;
     
     // Validate required fields
-    if (!API_BATTLENET_KEY || !API_BATTLENET_SECRET || !GUILD_NAME || !GUILD_REALM || !REGION || !API_PARAM_REQUIREMENTGS) {
+    if (!API_BATTLENET_KEY || !API_BATTLENET_SECRET || !RAIDERIO_API_KEY || !WCL_CLIENT_ID || !WCL_CLIENT_SECRET || !GUILD_NAME || !GUILD_REALM || !REGION || !API_PARAM_REQUIREMENTGS) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        message: 'API_BATTLENET_KEY, API_BATTLENET_SECRET, GUILD_NAME, GUILD_REALM, REGION, and API_PARAM_REQUIREMENTGS are required'
+        message: 'API_BATTLENET_KEY, API_BATTLENET_SECRET, RAIDERIO_API_KEY, WCL_CLIENT_ID, WCL_CLIENT_SECRET, GUILD_NAME, GUILD_REALM, REGION, and API_PARAM_REQUIREMENTGS are required'
       });
     }
     
@@ -312,6 +318,9 @@ router.post('/', async (req, res) => {
       ...otherSettings,
       API_BATTLENET_KEY,
       API_BATTLENET_SECRET,
+      RAIDERIO_API_KEY,
+      WCL_CLIENT_ID,
+      WCL_CLIENT_SECRET,
       GUILD_NAME,
       GUILD_REALM,
       REGION,

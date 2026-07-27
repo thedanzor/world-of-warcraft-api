@@ -10,6 +10,20 @@ import config from '../../app.config.js';
 
 const router = express.Router();
 
+const SENSITIVE_KEYS = [
+  'API_BATTLENET_KEY',
+  'API_BATTLENET_SECRET',
+  'RAIDERIO_API_KEY',
+  'WCL_CLIENT_ID',
+  'WCL_CLIENT_SECRET',
+];
+
+function stripSensitive(settings) {
+  const safe = { ...settings };
+  for (const key of SENSITIVE_KEYS) delete safe[key];
+  return safe;
+}
+
 /**
  * GET /api/config - Get app configuration (without sensitive data)
  */
@@ -19,7 +33,7 @@ router.get('/', async (req, res) => {
     
     if (!appSettingsExist) {
       // Return defaults from app.config.js (without sensitive data)
-      const { API_BATTLENET_KEY, API_BATTLENET_SECRET, ...safeConfig } = config;
+      const safeConfig = stripSensitive(config);
       return res.json({
         success: true,
         installed: false,
@@ -31,7 +45,7 @@ router.get('/', async (req, res) => {
     const dbSettings = await getAppSettings();
     if (!dbSettings) {
       // Fallback to app.config.js
-      const { API_BATTLENET_KEY, API_BATTLENET_SECRET, ...safeConfig } = config;
+      const safeConfig = stripSensitive(config);
       return res.json({
         success: true,
         installed: false,
@@ -40,7 +54,8 @@ router.get('/', async (req, res) => {
     }
     
     // Remove sensitive data and MongoDB _id
-    const { _id, API_BATTLENET_KEY, API_BATTLENET_SECRET, ...safeConfig } = dbSettings;
+    const safeConfig = stripSensitive(dbSettings);
+    delete safeConfig._id;
     
     res.json({
       success: true,
@@ -56,7 +71,7 @@ router.get('/', async (req, res) => {
     });
     
     // Fallback to app.config.js on error
-    const { API_BATTLENET_KEY, API_BATTLENET_SECRET, ...safeConfig } = config;
+    const safeConfig = stripSensitive(config);
     res.json({
       success: true,
       installed: false,

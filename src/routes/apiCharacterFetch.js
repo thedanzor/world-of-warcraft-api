@@ -13,6 +13,8 @@ import {
 } from '../../tools/guildFetcher/utils.mjs';
 import { logError } from '../database.js';
 import { getConfig } from '../config.js';
+import { enrichCharacter } from '../services/characterEnrichment.js';
+import { findMemberByName } from '../database.js';
 
 /**
  * GET /api/fetch/:realm/:character - Fetches fresh data for a specific character from WoW API.
@@ -370,6 +372,21 @@ router.get('/:realm/:character', async (req, res) => {
       checkRaidLockouts(dataToAppend.raidHistory) : 
       null;
 
+    let enrichment = null;
+    try {
+      const existingMember = await findMemberByName(characterName, server);
+      enrichment = await enrichCharacter(
+        { ...dataToAppend, name: characterName, server },
+        existingMember?.enrichment,
+      );
+    } catch (enrichErr) {
+      console.warn(`[enrichment] skipped for ${characterName}-${server}:`, enrichErr.message);
+    }
+
+    const rioRating = enrichment?.rioRating ?? 0;
+    const bnetMplusScore = dataToAppend.currentSeason?.current_mythic_rating?.rating
+      || dataToAppend.mplus?.current_mythic_rating?.rating || 0;
+
     const characterData = { 
       ...dataToAppend, 
       ready: hasValidGear, 
@@ -377,8 +394,11 @@ router.get('/:realm/:character', async (req, res) => {
       hasTierSet,
       lockStatus,
       isActiveInSeason2: isActive,
+      enrichment,
       processedStats: {
-        mythicPlusScore: dataToAppend.currentSeason?.current_mythic_rating?.rating || dataToAppend.mplus?.current_mythic_rating?.rating || 0,
+        mythicPlusScore: rioRating > 0 ? rioRating : bnetMplusScore,
+        raidScore: enrichment?.raidScore ?? 0,
+        combinedRankScore: enrichment?.combinedScore ?? 0,
         pvpRating: dataToAppend.pvp?.rating || 0,
         itemLevel: dataToAppend.itemlevel.equiped,
         role: TANKS.includes(dataToAppend.metaData.spec) ? 'TANK' : 

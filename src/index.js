@@ -25,6 +25,7 @@ import settingsRouter from './routes/settings.js';
 import upgradeRouter from './routes/upgrade.js';
 import jointextRouter from './routes/jointext.js';
 import apiRosterRouter from './routes/apiRoster.js';
+import apiRankingsRouter from './routes/apiRankings.js';
 import { logError } from './database.js';
 import { startCron } from './cron.js';
 
@@ -77,6 +78,7 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/upgrade', upgradeRouter);
 app.use('/api/jointext', jointextRouter);
 app.use('/api/roster', apiRosterRouter);
+app.use('/api/rankings', apiRankingsRouter);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
