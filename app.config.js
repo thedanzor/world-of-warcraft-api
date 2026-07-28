@@ -36,7 +36,7 @@ const data = {
     "DIFFICULTY": ["Mythic", "Heroic", "Normal"],
     "SEASON_START_DATE": "2025-08-01",
     "CURRENT_RAID": "Unknown Raid",
-    "CURRENT_MPLUS_SEASON": 16,
+    "CURRENT_MPLUS_SEASON": 17,
     "GUILLD_RANKS": [],
     "CURRENT_SEASON_TIER_SETS": [],
     "SITE_NAME": "WoW Guild Audit Tool",

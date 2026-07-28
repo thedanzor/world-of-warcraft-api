@@ -285,8 +285,18 @@ export const startGuildUpdate = async (dataTypes = ['raid', 'mplus', 'pvp'], pro
                 // Get all members with their current data
                 const allMembers = await getAllMembers();
                 
-                // Process guild-wide seasonal statistics
-                const guildSeasonalStats = processGuildSeasonalStats(allMembers, CURRENT_MPLUS_SEASON);
+        // Process guild-wide seasonal statistics
+                const detectedSeason = allMembers.reduce((max, member) => {
+                    const memberSeason = member.mplusSeasonId
+                        || member.currentSeason?.season?.id
+                        || 0;
+                    return Math.max(max, memberSeason);
+                }, CURRENT_MPLUS_SEASON);
+
+                const guildSeasonalStats = processGuildSeasonalStats(
+                    allMembers,
+                    detectedSeason || CURRENT_MPLUS_SEASON,
+                );
                 
                 // Get top achievements
                 const achievements = getTopSeasonalAchievements(guildSeasonalStats);

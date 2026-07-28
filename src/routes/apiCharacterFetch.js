@@ -11,6 +11,8 @@ import {
   hasEnchant,
   isTierItem
 } from '../../tools/guildFetcher/utils.mjs';
+import { resolveMplusSeasonId } from '../../tools/guildFetcher/mplusSeasonUtils.mjs';
+import { processCharacterSeasonalStats } from '../../tools/guildFetcher/seasonalStats.mjs';
 import { logError } from '../database.js';
 import { getConfig } from '../config.js';
 import { enrichCharacter } from '../services/characterEnrichment.js';
@@ -169,6 +171,7 @@ router.get('/:realm/:character', async (req, res) => {
       raidProgressUrl,
       mythicProgressUrl,
       mythicSeasonUrl,
+      statisticsUrl,
       pvpProgressUrl,
       bracketProgressUrl,
       mediaUrl,
@@ -255,31 +258,50 @@ router.get('/:realm/:character', async (req, res) => {
         const mplusResponse = await BnetApi.query(mythicProgressUrl);
         dataToAppend.mplus = mplusResponse;
         
-        // Check if character has seasons data and fetch current season
-        if (mplusResponse?.seasons && Array.isArray(mplusResponse.seasons)) {
-          const currentSeason = mplusResponse.seasons.find(season => season.id === CURRENT_MPLUS_SEASON);
-          
-          if (currentSeason) {
-            try {
-              const currentSeasonUrl = mythicSeasonUrl(CURRENT_MPLUS_SEASON);
-              const currentSeasonData = await BnetApi.query(currentSeasonUrl);
-              dataToAppend.currentSeason = currentSeasonData;
-            } catch (error) {
+        const seasonId = resolveMplusSeasonId(mplusResponse, CURRENT_MPLUS_SEASON);
+        dataToAppend.mplusSeasonId = seasonId;
+
+        if (seasonId && mplusResponse?.seasons?.length) {
+          try {
+            const currentSeasonData = await BnetApi.query(mythicSeasonUrl(seasonId));
+            dataToAppend.currentSeason = {
+              ...currentSeasonData,
+              current_mythic_rating: currentSeasonData.current_mythic_rating
+                || mplusResponse.current_mythic_rating
+                || { rating: 0 },
+            };
+          } catch (error) {
+            if (error.response?.status === 404 || error.status === 404) {
+              console.log(`Character ${characterName}-${server} has no completed runs for season ${seasonId}`);
+            } else {
               console.error('Error fetching current season data:', error.message);
-              dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
             }
-          } else {
-            console.log(`Character ${characterName}-${server} does not have season ${CURRENT_MPLUS_SEASON} data`);
-            dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+            dataToAppend.currentSeason = {
+              current_mythic_rating: mplusResponse.current_mythic_rating || { rating: 0 },
+              season: { id: seasonId },
+            };
           }
         } else {
           console.log(`Character ${characterName}-${server} has no seasons data`);
-          dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+          dataToAppend.currentSeason = {
+            current_mythic_rating: mplusResponse?.current_mythic_rating || { rating: 0 },
+          };
         }
       } catch (error) {
         console.error('Error fetching mythic+ data:', error.message);
         dataToAppend.mplus = { current_mythic_rating: { rating: 0 } };
         dataToAppend.currentSeason = { current_mythic_rating: { rating: 0 } };
+      }
+    }
+
+    // Fetch character statistics if requested
+    if (requestedDataTypes.includes('stats') || requestedDataTypes.includes('statistics')) {
+      try {
+        const statisticsResponse = await BnetApi.query(statisticsUrl);
+        dataToAppend.statistics = statisticsResponse;
+      } catch (error) {
+        console.error('Error fetching character statistics:', error.message);
+        dataToAppend.statistics = null;
       }
     }
 
@@ -395,6 +417,7 @@ router.get('/:realm/:character', async (req, res) => {
       lockStatus,
       isActiveInSeason2: isActive,
       enrichment,
+      seasonalStats: processCharacterSeasonalStats(dataToAppend),
       processedStats: {
         mythicPlusScore: rioRating > 0 ? rioRating : bnetMplusScore,
         raidScore: enrichment?.raidScore ?? 0,
